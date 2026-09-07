@@ -3,7 +3,7 @@
   "displayName": "Glide for OpenAI Code Completion",
   "description": "Low-latency AI tab completion for VS Code using OpenAI GPT-5.6 Luna.",
   "icon": "media/glide-icon.png",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "wtiger001",
   "license": "MIT",
   "repository": {
@@ -117,13 +117,6 @@
           "default": "https://api.openai.com/v1",
           "scope": "machine-overridable",
           "description": "Base URL for an OpenAI Responses-compatible service. Glide appends the Responses path. For Azure AI Foundry projects, use the project URL (for example, https://RESOURCE.services.ai.azure.com/api/projects/PROJECT). HTTPS is required except for localhost."
-        },
-        "glide.endpoint": {
-          "type": "string",
-          "default": "https://api.openai.com/v1/responses",
-          "scope": "machine-overridable",
-          "description": "Deprecated: use glide.baseUrl. Existing full Responses endpoint settings continue to work.",
-          "deprecationMessage": "Use glide.baseUrl instead."
         },
         "glide.authentication": {
           "type": "string",

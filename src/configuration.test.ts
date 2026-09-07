@@ -29,19 +29,15 @@ describe("normalizeEndpoint", () => {
     );
   });
 
-  it("uses the configured base URL in preference to the legacy endpoint", () => {
-    setMockConfiguration({
-      baseUrl: "https://resource.services.ai.azure.com/api/projects/my-project",
-      endpoint: "https://legacy.example/v1/responses"
-    });
+  it("uses the configured base URL", () => {
+    setMockConfiguration({ baseUrl: "https://resource.services.ai.azure.com/api/projects/my-project" });
     expect(readConfiguration().endpoint).toBe(
       "https://resource.services.ai.azure.com/api/projects/my-project/openai/v1/responses"
     );
   });
 
-  it("continues to use an explicitly configured legacy endpoint", () => {
-    setMockConfiguration({ endpoint: "https://legacy.example/v1/responses" });
-    expect(readConfiguration().endpoint).toBe("https://legacy.example/v1/responses");
+  it("uses the OpenAI default only when neither endpoint setting is configured", () => {
+    expect(readConfiguration().endpoint).toBe("https://api.openai.com/v1/responses");
   });
 
   it("sends a configured deployment name instead of the preset model", () => {

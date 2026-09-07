@@ -80,11 +80,6 @@ export function normalizeEndpoint(value: unknown): string | undefined {
   return parsed.toString().replace(/\/$/, "");
 }
 
-function explicitlyConfiguredValue(config: vscode.WorkspaceConfiguration, key: string): unknown {
-  const inspection = config.inspect<unknown>(key);
-  return inspection?.workspaceFolderValue ?? inspection?.workspaceValue ?? inspection?.globalValue;
-}
-
 export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
   const config = vscode.workspace.getConfiguration(CONFIG_SECTION, resource);
   const rawPatterns = config.get<unknown>("excludePatterns", []);
@@ -94,9 +89,7 @@ export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
 
   return {
     enabled: config.get<boolean>("enabled", true),
-    endpoint: normalizeEndpoint(
-      explicitlyConfiguredValue(config, "baseUrl") ?? explicitlyConfiguredValue(config, "endpoint") ?? DEFAULT_BASE_URL
-    ),
+    endpoint: normalizeEndpoint(config.get<unknown>("baseUrl", DEFAULT_BASE_URL)),
     authentication: enumValue(config.get<unknown>("authentication"), AUTHENTICATION_MODES, "bearer"),
     model:
       optionalString(config.get<unknown>("modelOverride")) ??

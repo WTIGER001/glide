@@ -24,6 +24,6 @@ export async function testActivationAndCommands(): Promise<void> {
 export function testConfigurationDefaults(): void {
   const configuration = vscode.workspace.getConfiguration("glide");
   assert.equal(configuration.get("model"), "gpt-5.6-luna");
-  assert.equal(configuration.get("endpoint"), "https://api.openai.com/v1/responses");
+  assert.equal(configuration.get("baseUrl"), "https://api.openai.com/v1");
   assert.equal(configuration.get("enabled"), true);
 }

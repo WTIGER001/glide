@@ -856,7 +856,7 @@ Accepted
 
 ## Decision
 
-Expose `glide.baseUrl` rather than requiring users to construct a full Responses endpoint. Glide derives the final endpoint by appending `/responses` to OpenAI-style `/v1` URLs and `/openai/v1/responses` to Azure AI Foundry project URLs. The former `glide.endpoint` setting remains supported as a deprecated compatibility setting.
+Expose `glide.baseUrl` rather than requiring users to construct a full Responses endpoint. Glide derives the final endpoint by appending `/responses` to OpenAI-style `/v1` URLs and `/openai/v1/responses` to Azure AI Foundry project URLs.
 
 ## Rationale
 
