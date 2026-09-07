@@ -13,7 +13,7 @@ export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 export const AUTHENTICATION_MODES = ["bearer", "api-key"] as const;
 export type AuthenticationMode = (typeof AUTHENTICATION_MODES)[number];
 
-export function modelLabel(model: GlideModel): string {
+export function modelLabel(model: string): string {
   switch (model) {
     case "gpt-5.6-luna":
       return "Luna";
@@ -21,5 +21,7 @@ export function modelLabel(model: GlideModel): string {
       return "Terra";
     case "gpt-5.6-sol":
       return "Sol";
+    default:
+      return model;
   }
 }

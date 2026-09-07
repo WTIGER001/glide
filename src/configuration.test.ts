@@ -44,6 +44,11 @@ describe("normalizeEndpoint", () => {
     expect(readConfiguration().endpoint).toBe("https://legacy.example/v1/responses");
   });
 
+  it("sends a configured deployment name instead of the preset model", () => {
+    setMockConfiguration({ model: "gpt-5.6-luna", modelOverride: "team-gpt-5-6-deployment" });
+    expect(readConfiguration().model).toBe("team-gpt-5-6-deployment");
+  });
+
   it("allows plaintext HTTP only for loopback development", () => {
     expect(normalizeEndpoint("http://localhost:4000/v1/responses")).toBe("http://localhost:4000/v1/responses");
     expect(normalizeEndpoint("http://example.test/v1/responses")).toBeUndefined();

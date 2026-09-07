@@ -5,7 +5,6 @@ import {
   REASONING_EFFORTS,
   SUPPORTED_MODELS,
   type AuthenticationMode,
-  type GlideModel,
   type ReasoningEffort
 } from "./constants";
 
@@ -15,7 +14,7 @@ export interface GlideConfiguration {
   readonly enabled: boolean;
   readonly endpoint: string | undefined;
   readonly authentication: AuthenticationMode;
-  readonly model: GlideModel;
+  readonly model: string;
   readonly debounceMs: number;
   readonly maxPrefixChars: number;
   readonly maxSuffixChars: number;
@@ -36,6 +35,11 @@ function boundedInteger(value: unknown, fallback: number, minimum: number, maxim
 
 function enumValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === "string" && allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+function optionalString(value: unknown): string | undefined {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text === "" ? undefined : text;
 }
 
 export function normalizeEndpoint(value: unknown): string | undefined {
@@ -94,7 +98,9 @@ export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
       explicitlyConfiguredValue(config, "baseUrl") ?? explicitlyConfiguredValue(config, "endpoint") ?? DEFAULT_BASE_URL
     ),
     authentication: enumValue(config.get<unknown>("authentication"), AUTHENTICATION_MODES, "bearer"),
-    model: enumValue(config.get<unknown>("model"), SUPPORTED_MODELS, "gpt-5.6-luna"),
+    model:
+      optionalString(config.get<unknown>("modelOverride")) ??
+      enumValue(config.get<unknown>("model"), SUPPORTED_MODELS, "gpt-5.6-luna"),
     debounceMs: boundedInteger(config.get<unknown>("debounceMs"), 175, 75, 1000),
     maxPrefixChars: boundedInteger(config.get<unknown>("maxPrefixChars"), 24_000, 1000, 100_000),
     maxSuffixChars: boundedInteger(config.get<unknown>("maxSuffixChars"), 6000, 0, 50_000),

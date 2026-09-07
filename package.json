@@ -155,6 +155,12 @@
           "scope": "machine-overridable",
           "description": "OpenAI model used for inline completion."
         },
+        "glide.modelOverride": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "description": "Optional exact model or deployment name sent to the configured endpoint. Overrides glide.model; use for Azure AI Foundry deployments and compatible gateways."
+        },
         "glide.debounceMs": {
           "type": "integer",
           "default": 175,

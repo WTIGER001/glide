@@ -130,6 +130,7 @@ All configuration is scoped under `glide`. Settings marked “advanced” remain
 | `glide.baseUrl` | string, `https://api.openai.com/v1` | Advanced Responses-compatible base URL. Glide appends the Responses path and expands Azure AI Foundry project URLs to `/openai/v1/responses`. V1 has no Chat Completions or FIM compatibility. |
 | `glide.authentication` | enum, `bearer` | Sends the credential as either `Authorization: Bearer` (OpenAI, LiteLLM, Microsoft Entra) or Azure's `api-key` header. |
 | `glide.model` | enum, `gpt-5.6-luna` | `gpt-5.6-luna`, `gpt-5.6-terra`, or `gpt-5.6-sol`. |
+| `glide.modelOverride` | string, empty | Optional exact model or deployment name for Azure AI Foundry and other compatible endpoints; overrides `glide.model`. |
 | `glide.debounceMs` | integer, `175` | Pause required before a request is eligible; range 75–1000. |
 | `glide.maxPrefixChars` | integer, `24000` | Maximum current-file text before cursor (advanced). |
 | `glide.maxSuffixChars` | integer, `6000` | Maximum current-file text after cursor (advanced). |

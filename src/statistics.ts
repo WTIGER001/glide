@@ -1,5 +1,4 @@
 import type * as vscode from "vscode";
-import type { GlideModel } from "./constants";
 
 const STORAGE_KEY = "glide.localStatistics.v1";
 
@@ -66,7 +65,7 @@ export class LocalStatistics implements vscode.Disposable {
     this.data = loadStatistics(state.get<unknown>(STORAGE_KEY));
   }
 
-  public requestStarted(model: GlideModel, language: string): void {
+  public requestStarted(model: string, language: string): void {
     this.data.requestsStarted += 1;
     this.data.byModel[model] = (this.data.byModel[model] ?? 0) + 1;
     this.data.byLanguage[language] = (this.data.byLanguage[language] ?? 0) + 1;

@@ -1,4 +1,4 @@
-import type { AuthenticationMode, GlideModel, ReasoningEffort } from "./constants";
+import type { AuthenticationMode, ReasoningEffort } from "./constants";
 import { shouldStopStream } from "./outputProcessor";
 
 export type ResponseStatus = "completed" | "incomplete" | "failed" | "cancelled";
@@ -13,7 +13,7 @@ export interface ResponsesCompletionRequest {
   readonly endpoint: string;
   readonly apiKey: string;
   readonly authentication: AuthenticationMode;
-  readonly model: GlideModel;
+  readonly model: string;
   readonly instructions: string;
   readonly input: string;
   readonly reasoningEffort: ReasoningEffort;

@@ -877,3 +877,19 @@ Store one credential in VS Code SecretStorage and allow users to choose either `
 ## Rationale
 
 OpenAI and LiteLLM commonly use bearer credentials, while Azure AI Foundry also supports an `api-key` header. Making the header format explicit allows direct Azure and private gateway use without adding a provider abstraction, alternate protocol, or plaintext secret setting.
+
+---
+
+# ADR-031: Allow an Exact Model or Deployment Override
+
+## Status
+
+Accepted
+
+## Decision
+
+Keep the Luna, Terra, and Sol presets while allowing `glide.modelOverride` to supply an exact model or deployment name to the configured endpoint.
+
+## Rationale
+
+Azure AI Foundry deployments and private gateways commonly expose names that differ from the underlying model identifier. Sending a configured override verbatim preserves Glide's simple Responses request while making endpoint-specific model routing possible.
