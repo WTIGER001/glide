@@ -1,5 +1,5 @@
 {
-  "name": "glide",
+  "name": "glide-code-completion",
   "displayName": "Glide",
   "description": "Low-latency AI tab completion for VS Code using OpenAI GPT-5.6 Luna.",
   "icon": "media/glide-icon.png",

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import * as vscode from "vscode";
 
 export async function testActivationAndCommands(): Promise<void> {
-  const extension = vscode.extensions.getExtension("wtiger001.glide");
+  const extension = vscode.extensions.getExtension("wtiger001.glide-code-completion");
   assert.ok(extension, "the Glide extension should be installed in the test host");
   await extension.activate();
   assert.equal(extension.isActive, true);

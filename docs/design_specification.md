@@ -1,7 +1,7 @@
 # Glide V1 Design Specification
 
 **Status:** proposed for implementation  
-**Product:** Glide (`wtiger001.glide`)  
+**Product:** Glide (`wtiger001.glide-code-completion`)  
 **License:** MIT — Copyright (c) 2026 John Bauer  
 **Target:** desktop VS Code only  
 **Last updated:** 2026-09-07
