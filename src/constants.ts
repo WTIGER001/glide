@@ -10,6 +10,9 @@ export type GlideModel = (typeof SUPPORTED_MODELS)[number];
 export const REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
+export const AUTHENTICATION_MODES = ["bearer", "api-key"] as const;
+export type AuthenticationMode = (typeof AUTHENTICATION_MODES)[number];
+
 export function modelLabel(model: GlideModel): string {
   switch (model) {
     case "gpt-5.6-luna":

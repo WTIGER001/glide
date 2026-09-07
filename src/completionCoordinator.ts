@@ -196,6 +196,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
         {
           endpoint: configuration.endpoint,
           apiKey,
+          authentication: configuration.authentication,
           model: configuration.model,
           instructions: COMPLETION_INSTRUCTIONS,
           input: buildCompletionInput(completionContext),

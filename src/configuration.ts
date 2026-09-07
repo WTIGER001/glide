@@ -1,8 +1,10 @@
 import * as vscode from "vscode";
 import {
+  AUTHENTICATION_MODES,
   CONFIG_SECTION,
   REASONING_EFFORTS,
   SUPPORTED_MODELS,
+  type AuthenticationMode,
   type GlideModel,
   type ReasoningEffort
 } from "./constants";
@@ -12,6 +14,7 @@ const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 export interface GlideConfiguration {
   readonly enabled: boolean;
   readonly endpoint: string | undefined;
+  readonly authentication: AuthenticationMode;
   readonly model: GlideModel;
   readonly debounceMs: number;
   readonly maxPrefixChars: number;
@@ -90,6 +93,7 @@ export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
     endpoint: normalizeEndpoint(
       explicitlyConfiguredValue(config, "baseUrl") ?? explicitlyConfiguredValue(config, "endpoint") ?? DEFAULT_BASE_URL
     ),
+    authentication: enumValue(config.get<unknown>("authentication"), AUTHENTICATION_MODES, "bearer"),
     model: enumValue(config.get<unknown>("model"), SUPPORTED_MODELS, "gpt-5.6-luna"),
     debounceMs: boundedInteger(config.get<unknown>("debounceMs"), 175, 75, 1000),
     maxPrefixChars: boundedInteger(config.get<unknown>("maxPrefixChars"), 24_000, 1000, 100_000),

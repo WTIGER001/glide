@@ -110,8 +110,8 @@ The selected model label is `Luna`, `Terra`, or `Sol`; it is never a claim that 
 - `Glide: Enable`
 - `Glide: Disable`
 - `Glide: Toggle`
-- `Glide: Set OpenAI API Key`
-- `Glide: Remove OpenAI API Key`
+- `Glide: Set API Key`
+- `Glide: Remove API Key`
 - `Glide: Test Connection`
 - `Glide: Show Stats`
 - `Glide: Reset Stats`
@@ -128,6 +128,7 @@ All configuration is scoped under `glide`. Settings marked “advanced” remain
 |---|---|---|
 | `glide.enabled` | boolean, `true` | Enables ghost-text completion. |
 | `glide.baseUrl` | string, `https://api.openai.com/v1` | Advanced Responses-compatible base URL. Glide appends the Responses path and expands Azure AI Foundry project URLs to `/openai/v1/responses`. V1 has no Chat Completions or FIM compatibility. |
+| `glide.authentication` | enum, `bearer` | Sends the credential as either `Authorization: Bearer` (OpenAI, LiteLLM, Microsoft Entra) or Azure's `api-key` header. |
 | `glide.model` | enum, `gpt-5.6-luna` | `gpt-5.6-luna`, `gpt-5.6-terra`, or `gpt-5.6-sol`. |
 | `glide.debounceMs` | integer, `175` | Pause required before a request is eligible; range 75–1000. |
 | `glide.maxPrefixChars` | integer, `24000` | Maximum current-file text before cursor (advanced). |
@@ -140,7 +141,7 @@ All configuration is scoped under `glide`. Settings marked “advanced” remain
 
 ### 6.1 Keys and configuration precedence
 
-1. An API key saved by `Glide: Set OpenAI API Key` in `ExtensionContext.secrets`.
+1. An API key or access token saved by `Glide: Set API Key` in `ExtensionContext.secrets`.
 2. `OPENAI_API_KEY` from the extension-host environment.
 3. No key: Glide remains enabled but requests no completion and status indicates that setup is required.
 

@@ -98,11 +98,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     register("glide.setApiKey", async () => {
       const key = await vscode.window.showInputBox({
-        title: "Glide: Set OpenAI API Key",
-        prompt: "The key is stored in VS Code SecretStorage and is never written to settings or logs.",
+        title: "Glide: Set API Key",
+        prompt: "The credential is stored in VS Code SecretStorage and is never written to settings or logs.",
         password: true,
         ignoreFocusOut: true,
-        validateInput: (value) => (value.trim() === "" ? "Enter an API key." : undefined)
+        validateInput: (value) => (value.trim() === "" ? "Enter an API key or access token." : undefined)
       });
       if (key === undefined) {
         return;
@@ -120,7 +120,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await secrets.removeApiKey();
       cache.clear();
       status.refresh();
-      void vscode.window.showInformationMessage("Glide removed the saved API key.");
+      void vscode.window.showInformationMessage("Glide removed the saved credential.");
     }),
     register("glide.clearCache", () => {
       cache.clear();
@@ -158,6 +158,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           {
             endpoint: configuration.endpoint,
             apiKey,
+            authentication: configuration.authentication,
             model: configuration.model,
             instructions: `${COMPLETION_INSTRUCTIONS}\nFor this connection test only, return exactly OK.`,
             input: "Connection test. Return exactly OK.",

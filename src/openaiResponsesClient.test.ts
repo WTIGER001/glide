@@ -10,6 +10,7 @@ function request(overrides: Partial<ResponsesCompletionRequest> = {}): Responses
   return {
     endpoint: "https://api.openai.com/v1/responses",
     apiKey: "test-key",
+    authentication: "bearer",
     model: "gpt-5.6-luna",
     instructions: "Return only code.",
     input: "<GLIDE_BEFORE>x</GLIDE_BEFORE>",
@@ -79,6 +80,17 @@ describe("OpenAIResponsesClient", () => {
     });
     expect(sentBody).not.toHaveProperty("tools");
     expect(sentBody).not.toHaveProperty("metadata");
+  });
+
+  it("uses Azure's api-key header when configured", async () => {
+    let sentHeaders: Headers | undefined;
+    const fetchMock = vi.fn((_url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      sentHeaders = new Headers(init?.headers);
+      return Promise.resolve(sseResponse([{ type: "response.completed", response: { status: "completed" } }]));
+    }) as typeof fetch;
+    await new OpenAIResponsesClient(fetchMock).complete(request({ authentication: "api-key" }), new AbortController().signal);
+    expect(sentHeaders?.get("api-key")).toBe("test-key");
+    expect(sentHeaders?.get("authorization")).toBeNull();
   });
 
   it("stops upstream once generated text overlaps the suffix", async () => {

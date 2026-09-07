@@ -39,7 +39,7 @@ export class GlideStatusBar implements vscode.Disposable {
           ? "Glide's endpoint is invalid. HTTPS is required except for localhost."
           : this.secrets.hasApiKey()
             ? "Glide could not reach the configured Responses endpoint. Click to open diagnostics."
-            : "Glide needs an OpenAI API key. Click to set one.";
+            : "Glide needs an API key or access token. Click to set one.";
       this.item.command = !this.secrets.hasApiKey() ? "glide.setApiKey" : "glide.openDiagnosticLog";
       return;
     }

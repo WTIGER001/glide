@@ -861,3 +861,19 @@ Expose `glide.baseUrl` rather than requiring users to construct a full Responses
 ## Rationale
 
 Azure AI Foundry provides a project-scoped base URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`; sending a request to that URL directly fails because its Responses route is nested below `/openai/v1/responses`. A base URL field makes the supported contract clear, avoids error-prone manual URL assembly, and preserves Glide's narrow Responses-only integration.
+
+---
+
+# ADR-030: Support Bearer and API-Key Authentication Headers
+
+## Status
+
+Accepted
+
+## Decision
+
+Store one credential in VS Code SecretStorage and allow users to choose either `Authorization: Bearer` or `api-key` request headers through `glide.authentication`.
+
+## Rationale
+
+OpenAI and LiteLLM commonly use bearer credentials, while Azure AI Foundry also supports an `api-key` header. Making the header format explicit allows direct Azure and private gateway use without adding a provider abstraction, alternate protocol, or plaintext secret setting.

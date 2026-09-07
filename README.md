@@ -38,11 +38,11 @@ The initial code intentionally excludes chat, agents, sidebars, repository index
 Install the generated VSIX from VS Code's **Extensions: Install from VSIX...** command, then run:
 
 ```text
-Glide: Set OpenAI API Key
+Glide: Set API Key
 Glide: Test Connection
 ```
 
-Glide defaults to `gpt-5.6-luna` and OpenAI's `https://api.openai.com/v1` base URL. Terra and Sol can be selected through `glide.model`. Set `glide.baseUrl` to use a controlled Responses-compatible service; Glide appends the Responses path automatically. For Azure AI Foundry, use the Foundry project URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`, which Glide resolves to `/openai/v1/responses`. Glide requires HTTPS except for loopback development endpoints.
+Glide defaults to `gpt-5.6-luna` and OpenAI's `https://api.openai.com/v1` base URL. Terra and Sol can be selected through `glide.model`. Set `glide.baseUrl` to use a controlled Responses-compatible service; Glide appends the Responses path automatically. For Azure AI Foundry, use the Foundry project URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`, which Glide resolves to `/openai/v1/responses`. Set `glide.authentication` to `api-key` for Azure API keys, or leave its `bearer` default for OpenAI, LiteLLM, and Microsoft Entra tokens. Glide requires HTTPS except for loopback development endpoints.
 
 Glide never reads a workspace `.env` or `.env.local` file. For managed development environments, set `OPENAI_API_KEY` in the VS Code extension host's environment instead.
 
@@ -325,6 +325,7 @@ Example configuration concepts:
 ```json
 {
   "glide.baseUrl": "https://example/v1",
+  "glide.authentication": "bearer",
   "glide.model": "gpt-5.6-luna",
   "glide.debounceMs": 175,
   "glide.maxPrefixTokens": 6000,

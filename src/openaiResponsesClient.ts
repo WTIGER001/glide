@@ -1,4 +1,4 @@
-import type { GlideModel, ReasoningEffort } from "./constants";
+import type { AuthenticationMode, GlideModel, ReasoningEffort } from "./constants";
 import { shouldStopStream } from "./outputProcessor";
 
 export type ResponseStatus = "completed" | "incomplete" | "failed" | "cancelled";
@@ -12,6 +12,7 @@ export interface CompletionUsage {
 export interface ResponsesCompletionRequest {
   readonly endpoint: string;
   readonly apiKey: string;
+  readonly authentication: AuthenticationMode;
   readonly model: GlideModel;
   readonly instructions: string;
   readonly input: string;
@@ -235,13 +236,18 @@ export class OpenAIResponsesClient {
     const startedAt = this.now();
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream, application/json"
+      };
+      if (request.authentication === "api-key") {
+        headers["api-key"] = request.apiKey;
+      } else {
+        headers.Authorization = `Bearer ${request.apiKey}`;
+      }
       const response = await this.fetchImplementation(request.endpoint, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${request.apiKey}`,
-          "Content-Type": "application/json",
-          Accept: "text/event-stream, application/json"
-        },
+        headers,
         body: JSON.stringify({
           model: request.model,
           instructions: request.instructions,

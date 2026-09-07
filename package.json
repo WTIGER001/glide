@@ -69,12 +69,12 @@
       },
       {
         "command": "glide.setApiKey",
-        "title": "Set OpenAI API Key",
+        "title": "Set API Key",
         "category": "Glide"
       },
       {
         "command": "glide.removeApiKey",
-        "title": "Remove OpenAI API Key",
+        "title": "Remove API Key",
         "category": "Glide"
       },
       {
@@ -124,6 +124,20 @@
           "scope": "machine-overridable",
           "description": "Deprecated: use glide.baseUrl. Existing full Responses endpoint settings continue to work.",
           "deprecationMessage": "Use glide.baseUrl instead."
+        },
+        "glide.authentication": {
+          "type": "string",
+          "enum": [
+            "bearer",
+            "api-key"
+          ],
+          "enumDescriptions": [
+            "Send the stored credential as Authorization: Bearer. Use for OpenAI, LiteLLM, and Microsoft Entra tokens.",
+            "Send the stored credential in Azure's api-key header."
+          ],
+          "default": "bearer",
+          "scope": "machine-overridable",
+          "description": "Credential header format for the configured Responses endpoint."
         },
         "glide.model": {
           "type": "string",
