@@ -7,7 +7,7 @@ import {
   type ReasoningEffort
 } from "./constants";
 
-const DEFAULT_ENDPOINT = "https://api.openai.com/v1/responses";
+const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 
 export interface GlideConfiguration {
   readonly enabled: boolean;
@@ -58,14 +58,24 @@ export function normalizeEndpoint(value: unknown): string | undefined {
 
   parsed.hash = "";
   parsed.search = "";
-  parsed.pathname = parsed.pathname.replace(/\/+$/, "");
-  if (parsed.pathname.endsWith("/v1")) {
-    parsed.pathname += "/responses";
-  }
-  if (parsed.pathname === "") {
+  const path = parsed.pathname.replace(/\/+$/, "");
+  if (path.endsWith("/responses")) {
+    parsed.pathname = path;
+  } else if (path === "") {
     parsed.pathname = "/v1/responses";
+  } else if (path.endsWith("/v1")) {
+    parsed.pathname = `${path}/responses`;
+  } else if (path.includes("/api/projects/")) {
+    parsed.pathname = `${path}/openai/v1/responses`;
+  } else {
+    parsed.pathname = `${path}/v1/responses`;
   }
   return parsed.toString().replace(/\/$/, "");
+}
+
+function explicitlyConfiguredValue(config: vscode.WorkspaceConfiguration, key: string): unknown {
+  const inspection = config.inspect<unknown>(key);
+  return inspection?.workspaceFolderValue ?? inspection?.workspaceValue ?? inspection?.globalValue;
 }
 
 export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
@@ -77,7 +87,9 @@ export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
 
   return {
     enabled: config.get<boolean>("enabled", true),
-    endpoint: normalizeEndpoint(config.get<unknown>("endpoint", DEFAULT_ENDPOINT)),
+    endpoint: normalizeEndpoint(
+      explicitlyConfiguredValue(config, "baseUrl") ?? explicitlyConfiguredValue(config, "endpoint") ?? DEFAULT_BASE_URL
+    ),
     model: enumValue(config.get<unknown>("model"), SUPPORTED_MODELS, "gpt-5.6-luna"),
     debounceMs: boundedInteger(config.get<unknown>("debounceMs"), 175, 75, 1000),
     maxPrefixChars: boundedInteger(config.get<unknown>("maxPrefixChars"), 24_000, 1000, 100_000),

@@ -845,3 +845,19 @@ Glide will not display partial streamed ghost text in V1. If streaming is unavai
 Twinny, Tabby, and Continue all consume model output incrementally somewhere in their completion path. They use the stream to stop at suffix overlap, line or indentation boundaries, repeated output, model control tokens, or time limits. Early termination reduces latency, output cost, and irrelevant trailing code even when the editor ultimately receives only a complete suggestion.
 
 This preserves atomic, non-flickering ghost text while capturing the material latency and quality advantages of streaming. It supersedes the non-streaming V1 transport preference in the design specification; it does not expand Glide into partial rendering or a conversational streaming UI.
+
+---
+
+# ADR-029: Configure a Responses Base URL
+
+## Status
+
+Accepted
+
+## Decision
+
+Expose `glide.baseUrl` rather than requiring users to construct a full Responses endpoint. Glide derives the final endpoint by appending `/responses` to OpenAI-style `/v1` URLs and `/openai/v1/responses` to Azure AI Foundry project URLs. The former `glide.endpoint` setting remains supported as a deprecated compatibility setting.
+
+## Rationale
+
+Azure AI Foundry provides a project-scoped base URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`; sending a request to that URL directly fails because its Responses route is nested below `/openai/v1/responses`. A base URL field makes the supported contract clear, avoids error-prone manual URL assembly, and preserves Glide's narrow Responses-only integration.

@@ -127,7 +127,7 @@ All configuration is scoped under `glide`. Settings marked “advanced” remain
 | Setting | Type / default | Meaning |
 |---|---|---|
 | `glide.enabled` | boolean, `true` | Enables ghost-text completion. |
-| `glide.endpoint` | string, `https://api.openai.com/v1/responses` | Advanced full Responses-compatible endpoint URL. V1 has no Chat Completions or FIM compatibility. |
+| `glide.baseUrl` | string, `https://api.openai.com/v1` | Advanced Responses-compatible base URL. Glide appends the Responses path and expands Azure AI Foundry project URLs to `/openai/v1/responses`. V1 has no Chat Completions or FIM compatibility. |
 | `glide.model` | enum, `gpt-5.6-luna` | `gpt-5.6-luna`, `gpt-5.6-terra`, or `gpt-5.6-sol`. |
 | `glide.debounceMs` | integer, `175` | Pause required before a request is eligible; range 75–1000. |
 | `glide.maxPrefixChars` | integer, `24000` | Maximum current-file text before cursor (advanced). |

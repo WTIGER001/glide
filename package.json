@@ -112,11 +112,18 @@
           "scope": "window",
           "description": "Enable inline code completions."
         },
+        "glide.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "scope": "machine-overridable",
+          "description": "Base URL for an OpenAI Responses-compatible service. Glide appends the Responses path. For Azure AI Foundry projects, use the project URL (for example, https://RESOURCE.services.ai.azure.com/api/projects/PROJECT). HTTPS is required except for localhost."
+        },
         "glide.endpoint": {
           "type": "string",
           "default": "https://api.openai.com/v1/responses",
           "scope": "machine-overridable",
-          "description": "Advanced: full OpenAI Responses-compatible endpoint URL. HTTPS is required except for localhost."
+          "description": "Deprecated: use glide.baseUrl. Existing full Responses endpoint settings continue to work.",
+          "deprecationMessage": "Use glide.baseUrl instead."
         },
         "glide.model": {
           "type": "string",

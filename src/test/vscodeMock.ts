@@ -50,6 +50,10 @@ export const workspace = {
   isTrusted: true,
   getWorkspaceFolder: () => undefined,
   getConfiguration: () => ({
-    get: <T>(key: string, fallback?: T): T => (key in configurationValues ? configurationValues[key] : fallback) as T
+    get: <T>(key: string, fallback?: T): T => (key in configurationValues ? configurationValues[key] : fallback) as T,
+    inspect: (key: string) =>
+      key in configurationValues
+        ? { globalValue: configurationValues[key], defaultValue: undefined }
+        : undefined
   })
 };
