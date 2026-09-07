@@ -44,7 +44,7 @@ Glide: Test Connection
 
 Glide defaults to `gpt-5.6-luna` and OpenAI's `https://api.openai.com/v1` base URL. Terra and Sol can be selected through `glide.model`. Set `glide.modelOverride` to an Azure deployment name or another endpoint-specific model name. Set `glide.baseUrl` to use a controlled Responses-compatible service; Glide appends the Responses path automatically. For Azure AI Foundry, use the Foundry project URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`, which Glide resolves to `/openai/v1/responses`. Set `glide.authentication` to `api-key` for Azure API keys, or leave its `bearer` default for OpenAI, LiteLLM, and Microsoft Entra tokens. Glide requires HTTPS except for loopback development endpoints.
 
-Glide never reads a workspace `.env` or `.env.local` file. For managed development environments, set `OPENAI_API_KEY` in the VS Code extension host's environment instead.
+Glide never reads a workspace `.env` or `.env.local` file. For managed development environments, set `OPENAI_API_KEY` in the VS Code extension host's environment instead. Important failures, including authentication errors, are recorded in the **Glide** Output channel with the normalized endpoint, authentication mode, model/deployment name, and status/category; verbose diagnostics remain opt-in and never include source, prompts, filenames, response text, or credentials.
 
 ## Develop
 

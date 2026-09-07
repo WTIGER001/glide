@@ -148,6 +148,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
       if (configuration.endpoint === undefined) {
         status.setError(true);
+        logger.importantError("connection-test.invalid-endpoint", { category: "configuration" });
         void vscode.window.showWarningMessage("Glide's Responses endpoint is invalid. Use HTTPS, or HTTP only for localhost.");
         return;
       }
@@ -180,7 +181,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         transportError = true;
         status.setError(true);
         const statusCode = error instanceof ResponsesApiError ? error.statusCode : undefined;
-        logger.event("connection-test.failed", { status: statusCode, category: "connection-test" });
+        logger.importantError(
+          statusCode === 401 || statusCode === 403 ? "connection-test.authentication-failed" : "connection-test.failed",
+          {
+            status: statusCode,
+            category: "connection-test",
+            endpoint: configuration.endpoint,
+            authentication: configuration.authentication,
+            model: configuration.model
+          }
+        );
         void vscode.window.showWarningMessage(
           statusCode === 401 || statusCode === 403
             ? "Glide could not authenticate. Check the API key and endpoint."

@@ -239,7 +239,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       });
       return this.itemIfCurrent(operation, document, position, completionContext, completion);
     } catch (error) {
-      this.handleError(error);
+      this.handleError(error, configuration);
       return undefined;
     } finally {
       operation.requestController = undefined;
@@ -335,11 +335,16 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     return [item];
   }
 
-  private handleError(error: unknown): void {
+  private handleError(error: unknown, configuration: GlideConfiguration): void {
+    const requestMetadata = {
+      endpoint: configuration.endpoint,
+      authentication: configuration.authentication,
+      model: configuration.model
+    };
     if (error instanceof ResponsesApiError) {
       if (error.timedOut) {
         this.dependencies.statistics.requestCancelled(true);
-        this.dependencies.logger.event("completion.timeout");
+        this.dependencies.logger.importantError("completion.timeout", requestMetadata);
         return;
       }
       if (error.message.includes("cancelled")) {
@@ -348,19 +353,30 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       }
       this.dependencies.statistics.requestFailed();
       if (error.statusCode === 401 || error.statusCode === 403) {
+        this.dependencies.logger.importantError("completion.authentication-failed", {
+          status: error.statusCode,
+          category: "responses-api",
+          ...requestMetadata
+        });
         this.dependencies.onAuthenticationError();
-      } else if (error.statusCode === 429) {
+      } else {
+        this.dependencies.logger.importantError("completion.failed", {
+          status: error.statusCode,
+          category: "responses-api",
+          ...requestMetadata
+        });
+      }
+      if (error.statusCode === 429) {
         this.cooldownUntil = Date.now() + 2000;
       } else if (error.statusCode !== undefined && error.statusCode >= 500) {
         this.transientFailures += 1;
         this.cooldownUntil = Date.now() + Math.min(8000, 500 * 2 ** this.transientFailures);
       }
-      this.dependencies.logger.event("completion.failed", { status: error.statusCode, category: "responses-api" });
       this.dependencies.onTransportError();
       return;
     }
     this.dependencies.statistics.requestFailed();
-    this.dependencies.logger.event("completion.failed", { category: "unexpected" });
+    this.dependencies.logger.importantError("completion.failed", { category: "unexpected", ...requestMetadata });
     this.dependencies.onTransportError();
   }
 }

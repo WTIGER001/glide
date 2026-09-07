@@ -242,7 +242,7 @@
           "type": "boolean",
           "default": false,
           "scope": "window",
-          "description": "Write metadata-only diagnostics. Source, prompts, filenames, completion text, and secrets are never logged."
+          "description": "Write additional metadata-only diagnostics. Important errors always record the normalized endpoint, authentication mode, model, and status in Glide Output; source, prompts, filenames, completion text, and secrets are never logged."
         }
       }
     }

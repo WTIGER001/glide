@@ -138,7 +138,7 @@ All configuration is scoped under `glide`. Settings marked “advanced” remain
 | `glide.reasoningEffort` | enum, `none` | `none`, `low`, `medium`, `high`, `xhigh`, `max`; normal completion defaults to `none`. |
 | `glide.requestTimeoutMs` | integer, `8000` | End-to-end client timeout; range 1000–30000. |
 | `glide.excludePatterns` | string array | Additional workspace-relative patterns in which Glide never requests completion. |
-| `glide.diagnosticLogging` | boolean, `false` | Enables metadata-only diagnostic logging; never logs code, prompts, response text, or secrets. |
+| `glide.diagnosticLogging` | boolean, `false` | Enables additional metadata-only diagnostics. Important errors always record the normalized endpoint, authentication mode, model, and status in Glide Output; code, prompts, response text, filenames, and secrets are never logged. |
 
 ### 6.1 Keys and configuration precedence
 

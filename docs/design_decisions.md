@@ -893,3 +893,19 @@ Keep the Luna, Terra, and Sol presets while allowing `glide.modelOverride` to su
 ## Rationale
 
 Azure AI Foundry deployments and private gateways commonly expose names that differ from the underlying model identifier. Sending a configured override verbatim preserves Glide's simple Responses request while making endpoint-specific model routing possible.
+
+---
+
+# ADR-032: Always Log Sanitized Important Failures
+
+## Status
+
+Accepted
+
+## Decision
+
+Write authentication failures, request failures, and timeouts to the Glide Output channel even when verbose diagnostics are disabled. Each entry includes the normalized endpoint, authentication mode, model/deployment name, status when available, and a failure category. Repeated identical failures are rate-limited.
+
+## Rationale
+
+Endpoint configuration failures are otherwise difficult to diagnose in restricted environments. These fields identify the request route and credential format while avoiding source text, prompts, filenames, completion text, tokens, credentials, query parameters, and URL fragments.
