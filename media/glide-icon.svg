@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Glide</title>
+  <desc id="description">A fluid, forward-moving G mark for the Glide code completion extension.</desc>
+  <defs>
+    <linearGradient id="background" x1="52" y1="38" x2="462" y2="478" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111C35"/>
+      <stop offset="1" stop-color="#090D1B"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="118" y1="146" x2="408" y2="372" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5BE7FF"/>
+      <stop offset=".48" stop-color="#55A8FF"/>
+      <stop offset="1" stop-color="#9B75FF"/>
+    </linearGradient>
+    <linearGradient id="highlight" x1="155" y1="145" x2="335" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8FAFF" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#D8FAFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="11"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#background)"/>
+  <path d="M397 262c0 91-65 148-149 148-93 0-166-70-166-163 0-91 70-163 165-163 56 0 105 24 136 63" fill="none" stroke="#4FAEFF" stroke-opacity=".25" stroke-width="40" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M397 262c0 91-65 148-149 148-93 0-166-70-166-163 0-91 70-163 165-163 56 0 105 24 136 63" fill="none" stroke="url(#ribbon)" stroke-width="34" stroke-linecap="round"/>
+  <path d="M395 262h-118" fill="none" stroke="url(#ribbon)" stroke-width="34" stroke-linecap="round"/>
+  <path d="m352 208 54 54-54 54" fill="none" stroke="url(#ribbon)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M112 214c20-57 75-96 135-96 43 0 82 18 110 47" fill="none" stroke="url(#highlight)" stroke-width="8" stroke-linecap="round"/>
+</svg>

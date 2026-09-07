@@ -1,0 +1,249 @@
+{
+  "name": "glide",
+  "displayName": "Glide",
+  "description": "Low-latency AI tab completion for VS Code using OpenAI GPT-5.6 Luna.",
+  "icon": "media/glide-icon.png",
+  "version": "0.1.0",
+  "publisher": "wtiger001",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wtiger001/glide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wtiger001/glide/issues"
+  },
+  "homepage": "https://github.com/wtiger001/glide#readme",
+  "engines": {
+    "vscode": "^1.82.0",
+    "node": ">=24.0.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "autocomplete",
+    "inline completion",
+    "ghost text",
+    "openai",
+    "luna",
+    "byok"
+  ],
+  "main": "./dist/extension.js",
+  "type": "commonjs",
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:glide.setApiKey"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Glide activates but never sends completion requests from an untrusted workspace."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Glide V1 supports desktop file-backed workspaces only."
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "glide.enable",
+        "title": "Enable",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.disable",
+        "title": "Disable",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.toggle",
+        "title": "Toggle",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.setApiKey",
+        "title": "Set OpenAI API Key",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.removeApiKey",
+        "title": "Remove OpenAI API Key",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.testConnection",
+        "title": "Test Connection",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.showStats",
+        "title": "Show Stats",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.resetStats",
+        "title": "Reset Stats",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.clearCache",
+        "title": "Clear Cache",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.openDiagnosticLog",
+        "title": "Open Diagnostic Log",
+        "category": "Glide"
+      }
+    ],
+    "configuration": {
+      "title": "Glide",
+      "properties": {
+        "glide.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "Enable inline code completions."
+        },
+        "glide.endpoint": {
+          "type": "string",
+          "default": "https://api.openai.com/v1/responses",
+          "scope": "machine-overridable",
+          "description": "Advanced: full OpenAI Responses-compatible endpoint URL. HTTPS is required except for localhost."
+        },
+        "glide.model": {
+          "type": "string",
+          "enum": [
+            "gpt-5.6-luna",
+            "gpt-5.6-terra",
+            "gpt-5.6-sol"
+          ],
+          "enumDescriptions": [
+            "Fast, cost-sensitive default for frequent completion.",
+            "Balanced capability, latency, and cost.",
+            "Highest-capability option; may be slower and more expensive."
+          ],
+          "default": "gpt-5.6-luna",
+          "scope": "machine-overridable",
+          "description": "OpenAI model used for inline completion."
+        },
+        "glide.debounceMs": {
+          "type": "integer",
+          "default": 175,
+          "minimum": 75,
+          "maximum": 1000,
+          "scope": "window",
+          "description": "Pause after editing before Glide requests a completion."
+        },
+        "glide.maxPrefixChars": {
+          "type": "integer",
+          "default": 24000,
+          "minimum": 1000,
+          "maximum": 100000,
+          "scope": "window",
+          "description": "Advanced: maximum current-file characters before the cursor."
+        },
+        "glide.maxSuffixChars": {
+          "type": "integer",
+          "default": 6000,
+          "minimum": 0,
+          "maximum": 50000,
+          "scope": "window",
+          "description": "Advanced: maximum current-file characters after the cursor."
+        },
+        "glide.maxCompletionTokens": {
+          "type": "integer",
+          "default": 96,
+          "minimum": 16,
+          "maximum": 256,
+          "scope": "window",
+          "description": "Advanced: maximum output tokens for one completion."
+        },
+        "glide.reasoningEffort": {
+          "type": "string",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "default": "none",
+          "scope": "window",
+          "description": "Reasoning effort for completion. None is recommended for latency."
+        },
+        "glide.requestTimeoutMs": {
+          "type": "integer",
+          "default": 8000,
+          "minimum": 1000,
+          "maximum": 30000,
+          "scope": "window",
+          "description": "Advanced: hard timeout for a completion request."
+        },
+        "glide.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "resource",
+          "description": "Additional workspace-relative glob patterns where Glide must not send completions."
+        },
+        "glide.allowSensitiveFiles": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine-overridable",
+          "description": "Advanced: allow completion requests in files covered by Glide's built-in sensitive-file denylist."
+        },
+        "glide.cacheCapacity": {
+          "type": "integer",
+          "default": 64,
+          "minimum": 1,
+          "maximum": 512,
+          "scope": "window",
+          "description": "Advanced: maximum number of in-memory completion results."
+        },
+        "glide.diagnosticLogging": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "Write metadata-only diagnostics. Source, prompts, filenames, completion text, and secrets are never logged."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "clean": "node ./scripts/clean.mjs",
+    "build": "node ./scripts/build.mjs",
+    "watch": "node ./scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "node ./scripts/build-integration.mjs && node ./scripts/run-integration.mjs",
+    "lint": "eslint .",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "check:all": "npm run check && npm run test:integration",
+    "package": "npm run check && vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.4.1",
+    "@types/vscode": "1.82.0",
+    "@vitest/coverage-v8": "^5.0.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.10.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0",
+    "vitest": "^5.0.0"
+  }
+}
