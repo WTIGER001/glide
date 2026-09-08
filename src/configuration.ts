@@ -110,3 +110,14 @@ export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
 export async function setEnabled(enabled: boolean): Promise<void> {
   await vscode.workspace.getConfiguration(CONFIG_SECTION).update("enabled", enabled, vscode.ConfigurationTarget.Global);
 }
+
+export async function setBaseUrl(baseUrl: string): Promise<string> {
+  const endpoint = normalizeEndpoint(baseUrl);
+  if (endpoint === undefined) {
+    throw new Error("Base URL must be an HTTPS URL, or HTTP only for localhost.");
+  }
+  await vscode.workspace
+    .getConfiguration(CONFIG_SECTION)
+    .update("baseUrl", baseUrl.trim(), vscode.ConfigurationTarget.Global);
+  return endpoint;
+}

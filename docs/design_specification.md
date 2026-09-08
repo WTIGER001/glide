@@ -110,6 +110,7 @@ The selected model label is `Luna`, `Terra`, or `Sol`; it is never a claim that 
 - `Glide: Enable`
 - `Glide: Disable`
 - `Glide: Toggle`
+- `Glide: Set Base URL`
 - `Glide: Set API Key`
 - `Glide: Remove API Key`
 - `Glide: Test Connection`

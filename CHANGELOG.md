@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 - 2026-09-07
+
+- Add `Glide: Set Base URL`, which validates and globally saves a Responses-compatible base URL and shows the resolved endpoint.
+
 ## 0.1.2 - 2026-09-07
 
 - Make `glide.baseUrl` the only endpoint setting so configured base URLs always determine the request route.

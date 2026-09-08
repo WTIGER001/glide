@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { CompletionCache } from "./completionCache";
 import { CompletionCoordinator } from "./completionCoordinator";
-import { readConfiguration, setEnabled } from "./configuration";
+import { normalizeEndpoint, readConfiguration, setBaseUrl, setEnabled } from "./configuration";
 import { ACCEPTANCE_COMMAND } from "./constants";
 import { DiagnosticLogger } from "./logger";
 import { OpenAIResponsesClient, ResponsesApiError } from "./openaiResponsesClient";
@@ -95,6 +95,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
       await setEnabled(!enabled);
       status.refresh();
+    }),
+    register("glide.setBaseUrl", async () => {
+      const currentBaseUrl = vscode.workspace.getConfiguration("glide").get<string>("baseUrl", "https://api.openai.com/v1");
+      const baseUrl = await vscode.window.showInputBox({
+        title: "Glide: Set Base URL",
+        prompt: "Enter a Responses-compatible base URL. Glide adds the Responses path automatically.",
+        value: currentBaseUrl,
+        ignoreFocusOut: true,
+        validateInput: (value) =>
+          normalizeEndpoint(value) === undefined ? "Enter an HTTPS URL, or HTTP only for localhost." : undefined
+      });
+      if (baseUrl === undefined) {
+        return;
+      }
+      const endpoint = await setBaseUrl(baseUrl);
+      coordinator.cancel("base-url-changed");
+      cache.clear();
+      transportError = false;
+      status.setError(false);
+      status.refresh();
+      void vscode.window.showInformationMessage(`Glide will use ${endpoint}.`);
     }),
     register("glide.setApiKey", async () => {
       const key = await vscode.window.showInputBox({

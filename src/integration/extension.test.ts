@@ -12,6 +12,7 @@ export async function testActivationAndCommands(): Promise<void> {
     "glide.enable",
     "glide.disable",
     "glide.toggle",
+    "glide.setBaseUrl",
     "glide.setApiKey",
     "glide.testConnection",
     "glide.showStats",

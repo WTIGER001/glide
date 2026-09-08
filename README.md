@@ -38,6 +38,7 @@ The initial code intentionally excludes chat, agents, sidebars, repository index
 Install the generated VSIX from VS Code's **Extensions: Install from VSIX...** command, then run:
 
 ```text
+Glide: Set Base URL
 Glide: Set API Key
 Glide: Test Connection
 ```
@@ -310,6 +311,7 @@ Initial commands should include:
 Glide: Enable
 Glide: Disable
 Glide: Toggle
+Glide: Set Base URL
 Glide: Show Stats
 Glide: Reset Stats
 Glide: Clear Cache
