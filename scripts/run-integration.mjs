@@ -5,7 +5,7 @@ import { runTests } from "@vscode/test-electron";
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 await runTests({
-  version: "1.82.0",
+  version: process.env.GLIDE_VSCODE_VERSION || "1.82.0",
   extensionDevelopmentPath: repositoryRoot,
   extensionTestsPath: path.join(repositoryRoot, "dist", "test", "index.js"),
   launchArgs: ["--disable-extensions"]

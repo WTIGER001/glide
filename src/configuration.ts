@@ -25,6 +25,7 @@ export interface GlideConfiguration {
   readonly allowSensitiveFiles: boolean;
   readonly cacheCapacity: number;
   readonly diagnosticLogging: boolean;
+  readonly sameFileContext: boolean;
 }
 
 function boundedInteger(value: unknown, fallback: number, minimum: number, maximum: number): number {
@@ -103,7 +104,8 @@ export function readConfiguration(resource?: vscode.Uri): GlideConfiguration {
     excludePatterns,
     allowSensitiveFiles: config.get<boolean>("allowSensitiveFiles", false),
     cacheCapacity: boundedInteger(config.get<unknown>("cacheCapacity"), 64, 1, 512),
-    diagnosticLogging: config.get<boolean>("diagnosticLogging", false)
+    diagnosticLogging: config.get<boolean>("diagnosticLogging", false),
+    sameFileContext: config.get<boolean>("sameFileContext", false)
   };
 }
 

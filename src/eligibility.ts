@@ -23,6 +23,7 @@ export interface EligibilityInput {
   readonly hasApiKey: boolean;
   readonly configuration: GlideConfiguration;
   readonly workspaceFolderPath: string | undefined;
+  readonly automatic?: boolean;
 }
 
 const PROTECTED_BASENAMES = [
@@ -111,7 +112,8 @@ export function checkEligibility(input: EligibilityInput): IneligibleReason | un
 
   const line = document.lineAt(position.line).text;
   const beforeCursor = line.slice(0, position.character);
-  if (/[)\]};]$/u.test(beforeCursor)) {
+  const automatic = input.automatic !== false;
+  if (automatic && /[)\]};]$/u.test(beforeCursor)) {
     return "completed-closer";
   }
   if (line.length > 20_000) {
@@ -120,7 +122,7 @@ export function checkEligibility(input: EligibilityInput): IneligibleReason | un
   const documentOffset = document.offsetAt(position);
   const localStart = document.positionAt(Math.max(0, documentOffset - 500));
   const localPrefix = document.getText(new vscode.Range(localStart, position));
-  if (!/\S/u.test(localPrefix)) {
+  if (automatic && !/\S/u.test(localPrefix)) {
     return "empty-context";
   }
   return undefined;

@@ -5,7 +5,10 @@ export type ResponseStatus = "completed" | "incomplete" | "failed" | "cancelled"
 
 export interface CompletionUsage {
   readonly inputTokens?: number;
+  readonly cachedInputTokens?: number;
+  readonly cacheWriteInputTokens?: number;
   readonly outputTokens?: number;
+  readonly reasoningOutputTokens?: number;
   readonly totalTokens?: number;
 }
 
@@ -20,6 +23,8 @@ export interface ResponsesCompletionRequest {
   readonly maxOutputTokens: number;
   readonly timeoutMs: number;
   readonly suffix: string;
+  /** Benchmark-only unless a measured production policy is adopted. */
+  readonly promptCache?: { readonly key?: string };
 }
 
 export interface ResponsesCompletionResult {
@@ -53,6 +58,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function isRedirectFailure(error: unknown): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < 3 && isRecord(current); depth += 1) {
+    if (typeof current.message === "string" && /redirect/iu.test(current.message)) {
+      return true;
+    }
+    current = current.cause;
+  }
+  return false;
+}
+
 function responseStatus(value: unknown): ResponseStatus {
   return value === "completed" || value === "incomplete" || value === "failed" || value === "cancelled"
     ? value
@@ -63,12 +79,19 @@ function parseUsage(value: unknown): CompletionUsage {
   if (!isRecord(value)) {
     return {};
   }
-  const result: { inputTokens?: number; outputTokens?: number; totalTokens?: number } = {};
+  const result: { inputTokens?: number; cachedInputTokens?: number; cacheWriteInputTokens?: number; outputTokens?: number; reasoningOutputTokens?: number; totalTokens?: number } = {};
   if (typeof value.input_tokens === "number") {
     result.inputTokens = value.input_tokens;
   }
   if (typeof value.output_tokens === "number") {
     result.outputTokens = value.output_tokens;
+  }
+  if (isRecord(value.input_tokens_details)) {
+    if (typeof value.input_tokens_details.cached_tokens === "number") result.cachedInputTokens = value.input_tokens_details.cached_tokens;
+    if (typeof value.input_tokens_details.cache_write_tokens === "number") result.cacheWriteInputTokens = value.input_tokens_details.cache_write_tokens;
+  }
+  if (isRecord(value.output_tokens_details) && typeof value.output_tokens_details.reasoning_tokens === "number") {
+    result.reasoningOutputTokens = value.output_tokens_details.reasoning_tokens;
   }
   if (typeof value.total_tokens === "number") {
     result.totalTokens = value.total_tokens;
@@ -201,6 +224,14 @@ async function readStreamingResponse(
         break;
       }
     }
+    if (!earlyStopped) {
+      buffer += decoder.decode();
+      if (buffer.trim() !== "") {
+        for (const payload of parseSseBlock(buffer)) {
+          applyStreamPayload(payload, accumulator, now);
+        }
+      }
+    }
   } finally {
     reader.releaseLock();
   }
@@ -247,6 +278,9 @@ export class OpenAIResponsesClient {
       }
       const response = await this.fetchImplementation(request.endpoint, {
         method: "POST",
+        // Do not replay source context or credentials to a redirect target.
+        // The configured URL must be the final Responses endpoint.
+        redirect: "error",
         headers,
         body: JSON.stringify({
           model: request.model,
@@ -257,7 +291,8 @@ export class OpenAIResponsesClient {
           temperature: 0.2,
           store: false,
           stream: true,
-          text: { verbosity: "low" }
+          text: { verbosity: "low" },
+          ...(request.promptCache?.key === undefined ? {} : { prompt_cache_key: request.promptCache.key })
         }),
         signal: controller.signal
       });
@@ -279,6 +314,9 @@ export class OpenAIResponsesClient {
       }
       if (controller.signal.aborted) {
         throw new ResponsesApiError(timedOut ? "Responses request timed out." : "Responses request cancelled.", undefined, timedOut);
+      }
+      if (isRedirectFailure(error)) {
+        throw new ResponsesApiError("Responses endpoint redirected. Configure the final endpoint URL.");
       }
       throw new ResponsesApiError("Responses request failed.");
     } finally {

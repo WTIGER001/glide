@@ -36,6 +36,11 @@ export class InlineCompletionItem {
   ) {}
 }
 
+export enum InlineCompletionTriggerKind {
+  Automatic = 0,
+  Invoke = 1
+}
+
 export const window: {
   activeTextEditor:
     | {

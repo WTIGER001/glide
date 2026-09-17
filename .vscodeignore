@@ -6,6 +6,8 @@
 .gitignore
 coverage/**
 dist/test/**
+dist/benchmark/**
+benchmarks/**
 docs/**
 scripts/**
 src/**

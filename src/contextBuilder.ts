@@ -10,10 +10,12 @@ export interface CompletionContext {
   readonly suffix: string;
   readonly cursorLine: number;
   readonly cursorColumn: number;
+  readonly cursorOffset: number;
   readonly linePrefix: string;
   readonly indentation: string;
   readonly insertSpaces: boolean;
   readonly tabSize: number;
+  readonly relatedContext?: string;
 }
 
 export interface ContextLimits {
@@ -65,7 +67,9 @@ export function buildCompletionContext(
 ): CompletionContext {
   const offset = document.offsetAt(position);
   const prefixStart = document.positionAt(Math.max(0, offset - limits.maxPrefixChars - 2));
-  const suffixEnd = document.positionAt(Math.min(document.getText().length, offset + limits.maxSuffixChars + 2));
+  // TextDocument.positionAt clamps offsets beyond the document end. Avoid
+  // reading the full document merely to discover its length.
+  const suffixEnd = document.positionAt(offset + limits.maxSuffixChars + 2);
   const rawPrefix = document.getText(new vscode.Range(prefixStart, position));
   const rawSuffix = document.getText(new vscode.Range(position, suffixEnd));
   const linePrefix = document.lineAt(position.line).text.slice(0, position.character);
@@ -80,6 +84,7 @@ export function buildCompletionContext(
     suffix: truncateHead(rawSuffix, limits.maxSuffixChars),
     cursorLine: position.line,
     cursorColumn: position.character,
+    cursorOffset: offset,
     linePrefix,
     indentation,
     insertSpaces: editorOptions.insertSpaces !== false,

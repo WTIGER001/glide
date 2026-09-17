@@ -1,0 +1,215 @@
+{
+  "sourceReviewHash": "f9169768e887269ff4c6a1b25f73bd32caa1bb7c96c033390118bf26c20cb1ff",
+  "priorManualReviewHash": "87aac420c5991d3e0fd7a3d63779ec659e62a1bdd7902a9156236f68090353ae",
+  "method": "Exact reconstructed-program hash and family match to prior static review; excludes primary/representation matches. No generated execution or new independent review.",
+  "decisions": [
+    {
+      "armId": "P0-B0",
+      "caseId": "go-divide-typed",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-struct-hole",
+      "repetition": 2,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-divide-hole",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-divide-typed",
+      "repetition": 1,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-divide-typed",
+      "repetition": 2,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-divide-hole",
+      "repetition": 2,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-divide-hole",
+      "repetition": 1,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-struct-hole",
+      "repetition": 0,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P0-B0",
+      "caseId": "go-struct-hole",
+      "repetition": 1,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-divide-typed",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-struct-hole",
+      "repetition": 2,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-divide-hole",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-divide-typed",
+      "repetition": 1,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-divide-typed",
+      "repetition": 2,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-divide-hole",
+      "repetition": 2,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-divide-hole",
+      "repetition": 1,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-struct-hole",
+      "repetition": 0,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P0-B1",
+      "caseId": "go-struct-hole",
+      "repetition": 1,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-divide-typed",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-struct-hole",
+      "repetition": 2,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-divide-hole",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-divide-typed",
+      "repetition": 1,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-divide-typed",
+      "repetition": 2,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-divide-hole",
+      "repetition": 2,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-divide-hole",
+      "repetition": 1,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0-B2",
+      "caseId": "go-struct-hole",
+      "repetition": 1,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "same-program-as-prior-static-review",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Glide
 
-Glide is a lightweight VS Code extension for low-latency AI code completion using GPT-5.6 Luna Fast or another OpenAI-compatible model endpoint.
+Glide is a lightweight VS Code extension for low-latency AI code completion using GPT-5.6 Luna through the OpenAI Responses API.
 
 Glide is intended primarily for isolated, restricted, enterprise, and government development environments where developers need Copilot-style inline code completion but cannot depend on a vendor-hosted IDE service.
 
@@ -28,10 +28,16 @@ Glide now has an installable V1 foundation with:
 * protected-file and workspace-trust safeguards,
 * response cleanup, suffix/prefix overlap removal, and indentation normalization,
 * exact and type-through continuation caching,
+* immediate explicit invocation with automatic-only debounce and noise suppression,
+* an experimental, disabled-by-default bounded same-file declaration selector,
 * API keys in VS Code SecretStorage with an `OPENAI_API_KEY` environment fallback,
 * local source-free statistics and metadata-only optional diagnostics.
 
 The initial code intentionally excludes chat, agents, sidebars, repository indexing, embeddings, and cross-file context.
+
+The [Luna completion research](docs/luna-completion-research.md) compares published infilling and IDE research with this implementation. The [completion action plan](docs/completion-action-plan.md) tracks the resulting fixes and experiments for work across development sessions.
+
+The [live Luna evaluations](docs/benchmarks/2026-09-16-gl07.md) found faster compact and full-fragment prompts without a supported quality improvement. Glide retains P0, its insertion-only protocol, a 96-token limit, and a 175 ms automatic debounce. A [bounded same-file study](docs/benchmarks/2026-09-17-gl08.md) did not support enabling selected context by default. The [release-candidate report](docs/benchmarks/2026-09-17-gl11-rc.md) records automated evidence and the remaining five-session human usability gate.
 
 ## Install and Configure
 
@@ -43,13 +49,13 @@ Glide: Set API Key
 Glide: Test Connection
 ```
 
-Glide defaults to `gpt-5.6-luna` and OpenAI's `https://api.openai.com/v1` base URL. Terra and Sol can be selected through `glide.model`. Set `glide.modelOverride` to an Azure deployment name or another endpoint-specific model name. Set `glide.baseUrl` to use a controlled Responses-compatible service; Glide appends the Responses path automatically. For Azure AI Foundry, use the Foundry project URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`, which Glide resolves to `/openai/v1/responses`. Set `glide.authentication` to `api-key` for Azure API keys, or leave its `bearer` default for OpenAI, LiteLLM, and Microsoft Entra tokens. Glide requires HTTPS except for loopback development endpoints.
+Glide defaults to `gpt-5.6-luna` and OpenAI's `https://api.openai.com/v1` base URL. Terra and Sol can be selected through `glide.model`. Set `glide.modelOverride` to an Azure deployment name. Glide appends the Responses path to `glide.baseUrl`. For Azure AI Foundry, use the Foundry project URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`, which Glide resolves to `/openai/v1/responses`. Set `glide.authentication` to `api-key` for Azure API keys, or leave its `bearer` default for OpenAI and Microsoft Entra tokens. Glide requires HTTPS except for loopback development endpoints.
 
 Glide never reads a workspace `.env` or `.env.local` file. For managed development environments, set `OPENAI_API_KEY` in the VS Code extension host's environment instead. Important failures, including authentication errors, are recorded in the **Glide** Output channel with the normalized endpoint, authentication mode, model/deployment name, and status/category; verbose diagnostics remain opt-in and never include source, prompts, filenames, response text, or credentials.
 
 ## Develop
 
-Glide uses Node.js 24 LTS for development and supports VS Code 1.82 or newer.
+Glide uses Node.js 24 LTS for development and supports VS Code 1.82 or newer. The extension bundle targets the Node 16.14 syntax level used by the minimum editor; integration tests run against VS Code 1.82 and current stable.
 
 ```bash
 npm install
@@ -57,7 +63,7 @@ npm run check
 npm run package
 ```
 
-The packaged extension is written to `glide-0.1.0.vsix`. Unit tests use captured Responses payloads and never require an API key.
+The packaged extension is written to `glide-0.1.3.vsix`. Unit tests use synthetic Responses payloads and never require an API key.
 
 ---
 
@@ -94,9 +100,7 @@ GPT-5.6 Luna Fast
 or another configured OpenAI-compatible endpoint
 ```
 
-A gateway such as LiteLLM may optionally sit between Glide and the model endpoint for centralized authentication, routing, auditing, rate limiting, or model selection.
-
-Glide must not require such a gateway.
+V1 talks directly to the configured OpenAI Responses endpoint. Gateway integrations are outside the V1 product boundary.
 
 ---
 
@@ -176,7 +180,7 @@ The extension should not require:
 * a vendor proxy,
 * an external indexing service.
 
-The only model-related network destination should be the configured model endpoint or explicitly configured gateway.
+The only model-related network destination is the configured completion endpoint. Redirects are rejected so credentials and source context are never replayed to another origin.
 
 Telemetry must be off by default.
 
@@ -530,7 +534,7 @@ Local statistics may include:
 
 ```text
 suggestions generated
-suggestions displayed
+suggestions returned by the inline provider
 suggestions accepted
 suggestions rejected or ignored
 characters suggested
@@ -621,40 +625,9 @@ These should only be added when testing demonstrates a meaningful benefit.
 
 ---
 
-## Potential Future Architecture
-
-A larger deployment might eventually use:
-
-```text
-Developer VS Code
-       |
-       v
-     Glide
-       |
-       v
-Central AI Gateway
-such as LiteLLM
-       |
-       +-- Luna Fast
-       +-- future completion model
-       +-- local model fallback
-```
-
-This could provide:
-
-* centralized authentication,
-* virtual API keys,
-* auditing,
-* usage limits,
-* model routing,
-* fallback models,
-* centralized cost control.
-
-Glide itself should remain independent of the gateway implementation.
-
----
-
 ## Development Model
+
+The Go-first evaluation corpus also covers TypeScript, Python, YAML, and JSON. See [the benchmark guide](benchmarks/README.md) for offline checks and explicitly budgeted live runs, and [the action plan](docs/completion-action-plan.md) for current priorities and per-task model recommendations.
 
 Glide should be developed primarily using GPT-5.6 Sol with a higher reasoning setting for architecture, code review, debugging, and analysis of reference implementations.
 

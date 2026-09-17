@@ -9,6 +9,7 @@ import { COMPLETION_INSTRUCTIONS } from "./promptBuilder";
 import { SecretStore } from "./secretStore";
 import { LocalStatistics } from "./statistics";
 import { GlideStatusBar } from "./statusBar";
+import { BoundedSameFileContextProvider } from "./sameFileContext";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const output = vscode.window.createOutputChannel("Glide");
@@ -30,6 +31,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     statistics,
     logger,
     client,
+    sameFileContextProvider: new BoundedSameFileContextProvider(),
     setRequesting: (requesting) => status.setRequesting(requesting),
     onAuthenticationError: () => {
       status.setError(true);
@@ -65,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     status,
     coordinator,
     vscode.languages.registerInlineCompletionItemProvider({ scheme: "file" }, coordinator),
-    vscode.workspace.onDidChangeTextDocument(() => coordinator.cancel("document-change")),
+    vscode.workspace.onDidChangeTextDocument((event) => coordinator.cancelDocument(event.document.uri)),
     vscode.window.onDidChangeTextEditorSelection(() => coordinator.cancel("selection-change")),
     vscode.window.onDidChangeActiveTextEditor(() => coordinator.cancel("editor-change")),
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -128,6 +130,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (key === undefined) {
         return;
       }
+      coordinator.cancel("key-changed");
       await secrets.setApiKey(key);
       authenticationNoticeShown = false;
       transportError = false;
@@ -157,8 +160,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await statistics.reset();
       void vscode.window.showInformationMessage("Glide reset its local aggregate statistics.");
     }),
-    register(ACCEPTANCE_COMMAND, (characters: number) => {
-      statistics.suggestionAccepted(typeof characters === "number" ? characters : 0);
+    register(ACCEPTANCE_COMMAND, (id: string, characters: number) => {
+      if (typeof id === "string") {
+        statistics.suggestionAccepted(id, typeof characters === "number" ? characters : undefined);
+      }
     }),
     register("glide.testConnection", async () => {
       const configuration = readConfiguration();

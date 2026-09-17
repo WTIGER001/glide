@@ -1,0 +1,46 @@
+{
+  "format": "gzip-compressed JSON",
+  "privacy": "Public independently authored synthetic fixtures and generated benchmark output only; no credentials or private dogfood source.",
+  "archives": [
+    {
+      "path": "artifacts/gl07b-fragment-live.json.gz",
+      "sourcePath": "benchmarks/runs/gl07b-fragment-live.json",
+      "sha256": "4bcad4bc495f33d254ef66f3311051c27057c88d462518eeaf5af79ff035f5b0",
+      "uncompressedSha256": "2424a362efd0cf099f6592ba3fe4fdd804580979eff80d13584125be499ef86e",
+      "bytes": 18868,
+      "uncompressedBytes": 242949
+    },
+    {
+      "path": "artifacts/gl07b-fragment-review.json.gz",
+      "sourcePath": "benchmarks/runs/gl07b-fragment-review.json",
+      "sha256": "97061fbcae56d2760c6958488152f5e2e80f2d1e6afbd1b09017fde0554a9f93",
+      "uncompressedSha256": "9789ea8e7dd606ae570f960bae4d48ee8d791473a20a36f4aa808ed48f8bd03a",
+      "bytes": 17487,
+      "uncompressedBytes": 235697
+    },
+    {
+      "path": "artifacts/gl08-context-live.json.gz",
+      "sourcePath": "benchmarks/runs/gl08-context-live.json",
+      "sha256": "a2f08ffb27f99ff4dd25ab411ce9c6f2e310da669de5e44fd48e982566519a81",
+      "uncompressedSha256": "e7c32611391d9e494784b48377a6ab15676c10ca8049139f0c9baf497887c80e",
+      "bytes": 61749,
+      "uncompressedBytes": 2485218
+    },
+    {
+      "path": "artifacts/gl08-context-review.json.gz",
+      "sourcePath": "benchmarks/runs/gl08-context-review.json",
+      "sha256": "9184f6a22c0b971682f4c247e360020cf27dc6ec648ebbb9b1c723870c93a942",
+      "uncompressedSha256": "6162784423ffd9559ac148a4664a64fe7b0971da081a7671752f5664d1db8d17",
+      "bytes": 82100,
+      "uncompressedBytes": 2657844
+    },
+    {
+      "path": "artifacts/gl07b-v2-oracle-final.json.gz",
+      "sourcePath": "benchmarks/runs/gl07b-v2-oracle-final.json",
+      "sha256": "6a5d677fe07784606be795cb7ea9ca546f9ebda3873341da36adb88b15a261a6",
+      "uncompressedSha256": "9e8076a7c9ce83a9092f14d4ec62d2d48fddd16c5c09324c947d4d4c9ccfa1cb",
+      "bytes": 35151,
+      "uncompressedBytes": 696056
+    }
+  ]
+}

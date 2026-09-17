@@ -1,0 +1,78 @@
+{
+  "format": "gzip-compressed JSON",
+  "privacy": "Public independently authored synthetic fixtures and generated benchmark output only; no request credentials or private dogfood source.",
+  "archives": [
+    {
+      "path": "artifacts/gl07-pilot-live.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-pilot-live.json",
+      "sha256": "7a1d1679d3659b50233f49dc14e7beb42f289f80660191ef02bec0f663f229f0",
+      "uncompressedSha256": "2c43fb5f4574559ab1fe66a1598409fd10e2aa909ccbc96ae45a0379e6f7c1fd",
+      "bytes": 4650,
+      "uncompressedBytes": 13299
+    },
+    {
+      "path": "artifacts/gl07-screen-live.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-screen-live.json",
+      "sha256": "30d3cd7155433167b1477e68251865809c9f713b5e0fbf154fd86b3278232258",
+      "uncompressedSha256": "23b851f3e964e009d37d7bb7feffc7a04af3fa4ff09bb5b3539738b318ba389d",
+      "bytes": 81438,
+      "uncompressedBytes": 755889
+    },
+    {
+      "path": "artifacts/gl07-screen-v2-live.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-screen-v2-live.json",
+      "sha256": "da091232a906d21a68642828fba05d83effe8a32c7b50d09c6ae911d3302da96",
+      "uncompressedSha256": "c2086d3ff9f8bcc85bffd3c5f2497a97bc05d683e4a6f5b7cf0276ddc45d00b8",
+      "bytes": 122222,
+      "uncompressedBytes": 1297243
+    },
+    {
+      "path": "artifacts/gl07-screen-v2-review.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-screen-v2-review.json",
+      "sha256": "913e5d71b35371995e67c2d05b07588d0ceceb95c07c4883994538fa9437d09d",
+      "uncompressedSha256": "8d152ddc34fcf3707abfef639724fab0e7d75248ca7afdcf2004fa4810e0013e",
+      "bytes": 109054,
+      "uncompressedBytes": 1307617
+    },
+    {
+      "path": "artifacts/gl07-screen-v2-equivalence.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-screen-v2-equivalence.json",
+      "sha256": "2ced75d9d00aa505ddcea98ede6b4912264222040fb3363443ae7eb03404757f",
+      "uncompressedSha256": "887ae34b7d0e319d3ce935550e19c97eca1800c9a1c8c8ae7121036fe49f30af",
+      "bytes": 1847,
+      "uncompressedBytes": 47019
+    },
+    {
+      "path": "artifacts/gl07-baseline-v2-checked.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-baseline-v2-checked.json",
+      "sha256": "a206be4477079049ccc426f2d63ae2c7be5eaa3a58d9184e4a63512cc876a1a2",
+      "uncompressedSha256": "e1e4ed295c59b7b7ac2b9c7460f3e118a2c342ab4f7d87e25dbd5277d1b88207",
+      "bytes": 27376,
+      "uncompressedBytes": 410040
+    },
+    {
+      "path": "artifacts/gl07-budgets-live.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-budgets-live.json",
+      "sha256": "ffe8928bb87445f4aed0ecd60abf7dee46406aba6c17a6b31d6388de2058eb49",
+      "uncompressedSha256": "3cba242a32b6ba85787b6b8bbc561938fa96553f17caa584c59e11932358883c",
+      "bytes": 52334,
+      "uncompressedBytes": 801567
+    },
+    {
+      "path": "artifacts/gl07-budgets-review.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-budgets-review.json",
+      "sha256": "88d2fcf6afc189ba024efc07981d85d1f138035677f910cb26bf175f70a1f484",
+      "uncompressedSha256": "f9169768e887269ff4c6a1b25f73bd32caa1bb7c96c033390118bf26c20cb1ff",
+      "bytes": 45418,
+      "uncompressedBytes": 819758
+    },
+    {
+      "path": "artifacts/gl07-budgets-equivalence.json.gz",
+      "sourcePath": "benchmarks/runs/gl07-budgets-equivalence.json",
+      "sha256": "1c01190a265fecbc29cf5f2c11135a341c60720dcbf6e0a1a8efebad684abbc0",
+      "uncompressedSha256": "b3030970983c1310eacc51fcff3c76be86fdae236a40481175cb5f9f619065b1",
+      "bytes": 1369,
+      "uncompressedBytes": 34067
+    }
+  ]
+}

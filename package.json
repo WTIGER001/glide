@@ -1,5 +1,5 @@
 {
-  "name": "glide-code-completion",
+  "name": "glide",
   "displayName": "Glide for OpenAI Code Completion",
   "description": "Low-latency AI tab completion for VS Code using OpenAI GPT-5.6 Luna.",
   "icon": "media/glide-icon.png",
@@ -15,8 +15,7 @@
   },
   "homepage": "https://github.com/wtiger001/glide#readme",
   "engines": {
-    "vscode": "^1.82.0",
-    "node": ">=24.0.0"
+    "vscode": "^1.82.0"
   },
   "categories": [
     "AI",
@@ -130,7 +129,7 @@
             "api-key"
           ],
           "enumDescriptions": [
-            "Send the stored credential as Authorization: Bearer. Use for OpenAI, LiteLLM, and Microsoft Entra tokens.",
+            "Send the stored credential as Authorization: Bearer. Use for OpenAI and Microsoft Entra tokens.",
             "Send the stored credential in Azure's api-key header."
           ],
           "default": "bearer",
@@ -157,7 +156,7 @@
           "type": "string",
           "default": "",
           "scope": "machine-overridable",
-          "description": "Optional exact model or deployment name sent to the configured endpoint. Overrides glide.model; use for Azure AI Foundry deployments and compatible gateways."
+          "description": "Optional exact model or deployment name sent to the configured endpoint. Overrides glide.model; use for Azure AI Foundry deployments."
         },
         "glide.debounceMs": {
           "type": "integer",
@@ -182,6 +181,12 @@
           "maximum": 50000,
           "scope": "window",
           "description": "Advanced: maximum current-file characters after the cursor."
+        },
+        "glide.sameFileContext": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "Experimental: add bounded relevant declarations from the current file. Disabled until benchmark and dogfood evidence supports it."
         },
         "glide.maxCompletionTokens": {
           "type": "integer",
@@ -256,6 +261,9 @@
     "lint": "eslint .",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "check:all": "npm run check && npm run test:integration",
+    "benchmark:offline": "node ./scripts/run-benchmark.mjs",
+    "benchmark:luna": "node ./scripts/run-benchmark.mjs --live",
+    "benchmark:experiment": "node ./scripts/run-benchmark.mjs --experiment",
     "package": "npm run check && vsce package --no-dependencies"
   },
   "devDependencies": {
@@ -269,6 +277,7 @@
     "eslint": "^10.10.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.69.0",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "yaml": "^2.9.1"
   }
 }

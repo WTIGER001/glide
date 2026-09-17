@@ -16,6 +16,7 @@ import { processCompletion } from "./outputProcessor";
 import { buildCompletionInput, COMPLETION_INSTRUCTIONS } from "./promptBuilder";
 import type { SecretStore } from "./secretStore";
 import type { LocalStatistics } from "./statistics";
+import type { SameFileContextProvider } from "./sameFileContext";
 
 type CompletionItems = vscode.InlineCompletionItem[] | undefined;
 
@@ -24,10 +25,12 @@ interface Anchor {
   readonly version: number;
   readonly line: number;
   readonly character: number;
+  readonly explicit: boolean;
 }
 
 interface ActiveOperation {
   readonly generation: number;
+  readonly createdAt: number;
   readonly anchor: Anchor;
   readonly subscribers: Map<symbol, vscode.Disposable>;
   cancelled: boolean;
@@ -47,6 +50,7 @@ export interface CompletionCoordinatorDependencies {
   readonly onAuthenticationError: () => void;
   readonly onTransportError: () => void;
   readonly onTransportSuccess: () => void;
+  readonly sameFileContextProvider?: SameFileContextProvider;
 }
 
 export class CompletionCoordinator implements vscode.InlineCompletionItemProvider, vscode.Disposable {
@@ -54,24 +58,27 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
   private active: ActiveOperation | undefined;
   private cooldownUntil = 0;
   private transientFailures = 0;
+  private suggestionSequence = 0;
 
   public constructor(private readonly dependencies: CompletionCoordinatorDependencies) {}
 
   public provideInlineCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-    _context: vscode.InlineCompletionContext,
+    context: vscode.InlineCompletionContext,
     token: vscode.CancellationToken
   ): Promise<CompletionItems> {
+    const explicit = context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke;
+    this.dependencies.statistics.opportunity(explicit);
     if (token.isCancellationRequested) {
-      this.cancel("editor");
       return Promise.resolve(undefined);
     }
     const anchor: Anchor = {
       uri: document.uri.toString(),
       version: document.version,
       line: position.line,
-      character: position.character
+      character: position.character,
+      explicit
     };
     if (this.active !== undefined && sameAnchor(this.active.anchor, anchor) && !this.active.cancelled) {
       this.subscribe(this.active, token);
@@ -82,6 +89,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     this.cancel("superseded");
     const operation: ActiveOperation = {
       generation: ++this.generation,
+      createdAt: performance.now(),
       anchor,
       subscribers: new Map(),
       cancelled: false,
@@ -123,6 +131,13 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
 
   public dispose(): void {
     this.cancel("deactivate");
+    this.dependencies.cache.clear();
+  }
+
+  public cancelDocument(uri: vscode.Uri): void {
+    if (this.active?.anchor.uri === uri.toString()) {
+      this.cancel("document-change");
+    }
   }
 
   private subscribe(operation: ActiveOperation, token: vscode.CancellationToken): void {
@@ -146,17 +161,26 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     position: vscode.Position
   ): Promise<CompletionItems> {
     const initialConfiguration = readConfiguration(document.uri);
-    const initialReason = this.eligibilityReason(document, position, initialConfiguration);
+    const initialReason = this.eligibilityReason(document, position, initialConfiguration, operation.anchor.explicit);
     if (initialReason !== undefined) {
       this.dependencies.logger.event("completion.suppressed", { reason: initialReason });
       return undefined;
     }
-    if (!(await this.delay(operation, initialConfiguration.debounceMs)) || !this.isCurrent(operation, document)) {
+    const initialEditor = vscode.window.activeTextEditor;
+    if (initialEditor === undefined || initialEditor.document.uri.toString() !== operation.anchor.uri) {
+      return undefined;
+    }
+    const initialContext = buildCompletionContext(document, position, initialEditor.options, initialConfiguration);
+    const initialCached = this.cachedCompletion(operation, document, position, initialContext, initialConfiguration);
+    if (initialCached !== undefined) {
+      return initialCached;
+    }
+    if (!(await this.delay(operation, operation.anchor.explicit ? 0 : initialConfiguration.debounceMs)) || !this.isCurrent(operation, document)) {
       return undefined;
     }
 
     const configuration = readConfiguration(document.uri);
-    const reason = this.eligibilityReason(document, position, configuration);
+    const reason = this.eligibilityReason(document, position, configuration, operation.anchor.explicit);
     if (reason !== undefined || !this.isCurrent(operation, document)) {
       return undefined;
     }
@@ -164,19 +188,18 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     if (editor === undefined || editor.document.uri.toString() !== operation.anchor.uri) {
       return undefined;
     }
-    const completionContext = buildCompletionContext(document, position, editor.options, configuration);
-    const identity = this.cacheIdentity(completionContext, configuration);
-    const continuationIdentity: ContinuationIdentity = { ...identity, uri: completionContext.uri };
-    const key = digestCacheIdentity(identity);
-    const exact = this.dependencies.cache.get(key);
-    if (exact !== undefined) {
-      this.dependencies.statistics.cacheHit();
-      return this.itemIfCurrent(operation, document, position, completionContext, exact);
+    let completionContext = buildCompletionContext(document, position, editor.options, configuration);
+    if (configuration.sameFileContext && this.dependencies.sameFileContextProvider !== undefined) {
+      const contextController = new AbortController();
+      operation.requestController = contextController;
+      const relatedContext = await this.dependencies.sameFileContextProvider.collect(document, position, completionContext, contextController.signal);
+      operation.requestController = undefined;
+      if (!this.isCurrent(operation, document)) return undefined;
+      completionContext = { ...completionContext, relatedContext };
     }
-    const continuation = this.dependencies.cache.getContinuation(continuationIdentity);
-    if (continuation !== undefined) {
-      this.dependencies.statistics.cacheHit(true);
-      return this.itemIfCurrent(operation, document, position, completionContext, continuation);
+    const cached = this.cachedCompletion(operation, document, position, completionContext, configuration);
+    if (cached !== undefined) {
+      return cached;
     }
     if (Date.now() < this.cooldownUntil) {
       return undefined;
@@ -208,22 +231,37 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
         controller.signal
       );
       if (!this.isCurrent(operation, document)) {
-        this.dependencies.statistics.requestCancelled();
+        this.dependencies.statistics.requestCancelled(false, performance.now() - startedAt);
         return undefined;
       }
       if (result.status !== "completed") {
         this.dependencies.statistics.requestFailed();
+        this.dependencies.statistics.outputRejected(`response-${result.status}`);
         return undefined;
       }
       this.transientFailures = 0;
       this.dependencies.onTransportSuccess();
-      this.dependencies.statistics.requestCompleted(performance.now() - startedAt);
+      this.dependencies.statistics.requestCompleted(performance.now() - startedAt, result.timeToFirstTokenMs);
+      const processingStartedAt = performance.now();
       const completion = processCompletion(result.text, completionContext, {
         maxCompletionTokens: configuration.maxCompletionTokens
       });
-      if (completion === undefined || !this.isCurrent(operation, document)) {
+      this.dependencies.statistics.processingCompleted(performance.now() - processingStartedAt);
+      if (completion === undefined) {
+        this.dependencies.statistics.outputRejected(/\S/u.test(result.text) ? "policy" : "empty");
         return undefined;
       }
+      if (!this.isCurrent(operation, document)) {
+        this.dependencies.statistics.outputRejected("stale");
+        return undefined;
+      }
+      const identity = this.cacheIdentity(completionContext, configuration);
+      const continuationIdentity: ContinuationIdentity = {
+        ...identity,
+        uri: completionContext.uri,
+        cursorOffset: completionContext.cursorOffset
+      };
+      const key = digestCacheIdentity(identity);
       this.dependencies.cache.set(key, completion);
       this.dependencies.cache.rememberContinuation(continuationIdentity, completion);
       this.dependencies.logger.event("completion.ready", {
@@ -239,18 +277,21 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       });
       return this.itemIfCurrent(operation, document, position, completionContext, completion);
     } catch (error) {
-      this.handleError(error, configuration);
+      this.handleError(error, configuration, performance.now() - startedAt);
       return undefined;
     } finally {
       operation.requestController = undefined;
-      this.dependencies.setRequesting(false);
+      if (this.active === operation) {
+        this.dependencies.setRequesting(false);
+      }
     }
   }
 
   private eligibilityReason(
     document: vscode.TextDocument,
     position: vscode.Position,
-    configuration: GlideConfiguration
+    configuration: GlideConfiguration,
+    explicit: boolean
   ): ReturnType<typeof checkEligibility> {
     const editor = vscode.window.activeTextEditor;
     const folder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -261,7 +302,8 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       workspaceTrusted: vscode.workspace.isTrusted,
       hasApiKey: this.dependencies.secrets.hasApiKey(),
       configuration,
-      workspaceFolderPath: folder?.uri.fsPath
+      workspaceFolderPath: folder?.uri.fsPath,
+      automatic: !explicit
     });
   }
 
@@ -311,9 +353,37 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       filename: context.filename,
       prefix: context.prefix,
       suffix: context.suffix,
+      relatedContext: context.relatedContext ?? "",
       maxCompletionTokens: configuration.maxCompletionTokens,
-      reasoningEffort: configuration.reasoningEffort
+      reasoningEffort: configuration.reasoningEffort,
+      insertSpaces: context.insertSpaces,
+      tabSize: context.tabSize
     };
+  }
+
+  private cachedCompletion(
+    operation: ActiveOperation,
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    context: CompletionContext,
+    configuration: GlideConfiguration
+  ): CompletionItems {
+    const identity = this.cacheIdentity(context, configuration);
+    const exact = this.dependencies.cache.get(digestCacheIdentity(identity));
+    if (exact !== undefined) {
+      this.dependencies.statistics.cacheHit();
+      return this.itemIfCurrent(operation, document, position, context, exact);
+    }
+    const continuation = this.dependencies.cache.getContinuation({
+      ...identity,
+      uri: context.uri,
+      cursorOffset: context.cursorOffset
+    });
+    if (continuation !== undefined) {
+      this.dependencies.statistics.cacheHit(true);
+      return this.itemIfCurrent(operation, document, position, context, continuation);
+    }
+    return undefined;
   }
 
   private itemIfCurrent(
@@ -326,16 +396,21 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     if (!this.isCurrent(operation, document)) {
       return undefined;
     }
+    const suggestionId = `${operation.generation}:${++this.suggestionSequence}`;
     const item = new vscode.InlineCompletionItem(completion, new vscode.Range(position, position), {
       title: "Record Glide completion acceptance",
       command: ACCEPTANCE_COMMAND,
-      arguments: [completion.length, context.language]
+      arguments: [suggestionId, completion.length, context.language]
     });
-    this.dependencies.statistics.suggestionDisplayed(completion.length);
+    this.dependencies.statistics.suggestionReturned(
+      suggestionId,
+      completion.length,
+      performance.now() - operation.createdAt
+    );
     return [item];
   }
 
-  private handleError(error: unknown, configuration: GlideConfiguration): void {
+  private handleError(error: unknown, configuration: GlideConfiguration, elapsedMs: number): void {
     const requestMetadata = {
       endpoint: configuration.endpoint,
       authentication: configuration.authentication,
@@ -343,12 +418,12 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     };
     if (error instanceof ResponsesApiError) {
       if (error.timedOut) {
-        this.dependencies.statistics.requestCancelled(true);
+        this.dependencies.statistics.requestCancelled(true, elapsedMs);
         this.dependencies.logger.importantError("completion.timeout", requestMetadata);
         return;
       }
       if (error.message.includes("cancelled")) {
-        this.dependencies.statistics.requestCancelled();
+        this.dependencies.statistics.requestCancelled(false, elapsedMs);
         return;
       }
       this.dependencies.statistics.requestFailed();
@@ -386,6 +461,7 @@ function sameAnchor(left: Anchor, right: Anchor): boolean {
     left.uri === right.uri &&
     left.version === right.version &&
     left.line === right.line &&
-    left.character === right.character
+    left.character === right.character &&
+    left.explicit === right.explicit
   );
 }

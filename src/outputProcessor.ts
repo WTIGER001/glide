@@ -1,4 +1,5 @@
 import type { CompletionContext } from "./contextBuilder";
+import { resolveSuffixOverlap } from "./insertionBoundary";
 
 export interface OutputPolicy {
   readonly maxCompletionTokens: number;
@@ -97,11 +98,14 @@ export function processCompletion(
   }
 
   value = stripEchoedPrefix(value, context);
-  const suffixOverlap = longestSuffixPrefixOverlap(value, context.suffix);
-  if (suffixOverlap > 0) {
-    value = value.slice(0, -suffixOverlap);
-  }
-  value = value.replace(/[\t ]+$/gmu, "").replace(/\n{3,}$/u, "\n\n");
+  const suffix = context.suffix.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+  const resolved = resolveSuffixOverlap(value, context, longestSuffixPrefixOverlap(value, suffix));
+  if (resolved === undefined) return undefined;
+  value = resolved;
+  // Remove horizontal whitespace from completed lines, while preserving
+  // terminal whitespace that can be semantically required before the suffix
+  // (for example, `await ` before an existing expression).
+  value = value.replace(/[\t ]+(?=\n)/gu, "").replace(/\n{3,}$/u, "\n\n");
   if (!/\S/u.test(value)) {
     return undefined;
   }
@@ -115,10 +119,8 @@ export function processCompletion(
   return /\S/u.test(value) ? value : undefined;
 }
 
-export function shouldStopStream(text: string, suffix: string, maxCompletionTokens: number): boolean {
-  if (text.length >= Math.min(8192, maxCompletionTokens * 12)) {
-    return true;
-  }
-  const overlap = longestSuffixPrefixOverlap(text, suffix);
-  return overlap >= Math.min(8, Math.max(2, suffix.split("\n", 1)[0]?.length ?? 2));
-}
+export const shouldStopStream: (text: string, suffix: string, maxCompletionTokens: number) => boolean = () => {
+  // Suffix similarity is not a protocol completion signal. Wait for the server
+  // terminal event; timeouts, cancellation and max_output_tokens still bound work.
+  return false;
+};

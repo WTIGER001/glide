@@ -8,12 +8,16 @@ export interface CacheIdentity {
   readonly filename: string;
   readonly prefix: string;
   readonly suffix: string;
+  readonly relatedContext: string;
   readonly maxCompletionTokens: number;
   readonly reasoningEffort: string;
+  readonly insertSpaces: boolean;
+  readonly tabSize: number;
 }
 
 export interface ContinuationIdentity extends CacheIdentity {
   readonly uri: string;
+  readonly cursorOffset: number;
 }
 
 interface ContinuationEntry {
@@ -32,8 +36,11 @@ export function digestCacheIdentity(identity: CacheIdentity): string {
         identity.filename,
         identity.prefix,
         identity.suffix,
+        identity.relatedContext,
         identity.maxCompletionTokens,
-        identity.reasoningEffort
+        identity.reasoningEffort,
+        identity.insertSpaces,
+        identity.tabSize
       ])
     )
     .digest("hex");
@@ -92,18 +99,24 @@ export class CompletionCache {
       prior.language !== next.language ||
       prior.filename !== next.filename ||
       prior.suffix !== next.suffix ||
+      prior.relatedContext !== next.relatedContext ||
       prior.maxCompletionTokens !== next.maxCompletionTokens ||
       prior.reasoningEffort !== next.reasoningEffort ||
-      next.prefix.length < prior.prefix.length ||
-      !next.prefix.startsWith(prior.prefix)
+      prior.insertSpaces !== next.insertSpaces ||
+      prior.tabSize !== next.tabSize ||
+      next.prefix.length === 0
     ) {
       return undefined;
     }
-    const typed = next.prefix.slice(prior.prefix.length);
-    if (typed === "" || !previous.completion.startsWith(typed)) {
+    const typedLength = next.cursorOffset - prior.cursorOffset;
+    if (typedLength <= 0 || typedLength > previous.completion.length) {
       return undefined;
     }
-    const remaining = previous.completion.slice(typed.length);
+    const combined = prior.prefix + previous.completion.slice(0, typedLength);
+    if (!combined.endsWith(next.prefix)) {
+      return undefined;
+    }
+    const remaining = previous.completion.slice(typedLength);
     return remaining === "" ? undefined : remaining;
   }
 

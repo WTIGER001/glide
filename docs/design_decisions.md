@@ -6,6 +6,8 @@ The purpose is to prevent future development from accidentally revisiting settle
 
 These decisions are not immutable. They may be changed when evidence from implementation or testing justifies doing so.
 
+The [2026-09-16 Luna completion research](luna-completion-research.md) and [completion action plan](completion-action-plan.md) propose follow-up experiments. They do not supersede accepted decisions by themselves; record evidence here when an implementation adopts a substantive change.
+
 ---
 
 # ADR-001: Build a New VS Code Extension
@@ -527,9 +529,9 @@ Useful statistics do not require source code.
 Potential local metrics include:
 
 * request latency,
-* suggestions displayed,
-* suggestions accepted,
-* acceptance percentage,
+* suggestions returned by the inline provider,
+* observed acceptance commands,
+* accepted characters,
 * characters accepted,
 * cache hits,
 * cancellations,
@@ -617,7 +619,7 @@ The status bar and Command Palette should provide immediate enable/disable funct
 
 ## Status
 
-Accepted
+Superseded by ADR-026 for V1
 
 ## Decision
 
@@ -876,7 +878,7 @@ Store one credential in VS Code SecretStorage and allow users to choose either `
 
 ## Rationale
 
-OpenAI and LiteLLM commonly use bearer credentials, while Azure AI Foundry also supports an `api-key` header. Making the header format explicit allows direct Azure and private gateway use without adding a provider abstraction, alternate protocol, or plaintext secret setting.
+OpenAI uses bearer credentials, while Azure AI Foundry also supports an `api-key` header and Microsoft Entra bearer tokens. Making the header format explicit supports the two direct Responses endpoints without adding a provider abstraction, alternate protocol, or plaintext secret setting.
 
 ---
 
@@ -892,7 +894,7 @@ Keep the Luna, Terra, and Sol presets while allowing `glide.modelOverride` to su
 
 ## Rationale
 
-Azure AI Foundry deployments and private gateways commonly expose names that differ from the underlying model identifier. Sending a configured override verbatim preserves Glide's simple Responses request while making endpoint-specific model routing possible.
+Azure AI Foundry deployments can expose names that differ from the underlying model identifier. Sending a configured override verbatim preserves Glide's simple Responses request while supporting that direct deployment model.
 
 ---
 
@@ -909,3 +911,171 @@ Write authentication failures, request failures, and timeouts to the Glide Outpu
 ## Rationale
 
 Endpoint configuration failures are otherwise difficult to diagnose in restricted environments. These fields identify the request route and credential format while avoiding source text, prompts, filenames, completion text, tokens, credentials, query parameters, and URL fragments.
+
+---
+
+# ADR-033: Reject Responses Redirects
+
+## Status
+
+Accepted
+
+## Decision
+
+Every completion and connection-test request uses `redirect: "error"`. Users must configure the final Responses endpoint directly.
+
+## Rationale
+
+The Fetch default follows redirects and may replay the authorization header and request body. The body includes bounded source context. Rejecting redirects at the transport layer preserves Glide's promise that credentials and source travel only to the configured endpoint. A two-origin loopback regression covers 301, 302, 303, 307, and 308 for bearer and `api-key` authentication.
+
+---
+
+# ADR-034: Measure Provider Returns, Not Assumed Displays
+
+## Status
+
+Accepted
+
+## Decision
+
+Local statistics distinguish completion opportunities, provider requests, valid inline items returned, and observed acceptance commands. They do not label a returned item as displayed. Latencies use bounded aggregate histograms, and acceptance IDs exist only in bounded memory.
+
+## Rationale
+
+VS Code's inline-completion API does not provide a reliable rendered event. Calling every returned item “displayed” overstated the evidence and made acceptance ratios ambiguous. Aggregate buckets support p50/p95 comparisons without retaining source, completion text, filenames, repository names, or durable hashes.
+
+---
+
+# ADR-035: Validate Cache Reuse Before Debounce
+
+## Status
+
+Accepted
+
+## Decision
+
+After cheap eligibility checks, Glide checks exact and continuation caches before the network debounce. Continuation reuse requires the same endpoint, model, prompt policy, file URI, suffix, editor formatting, and an advancing cursor whose inserted text exactly matches the beginning of the prior suggestion.
+
+## Rationale
+
+Local reuse should feel immediate. The former post-debounce lookup added 175 ms by default and stopped working when the bounded prefix window slid. Cursor offsets plus tail alignment preserve safe type-through and matching paste reuse while invalidating undo, replacement text, suffix changes, file switches, and formatting or model-policy changes.
+
+---
+
+# ADR-036: Separate Completion Evaluation from Runtime Telemetry
+
+## Status
+
+Accepted
+
+## Decision
+
+Maintain an independently authored MIT synthetic corpus with fixed source-family development/holdout splits. Include Go, TypeScript, Python, YAML, and JSON. Record raw versus processed output, exact/alternative matches, abstention, syntax, and parsed data equality separately. Execute only trusted reference programs; never execute captured model-generated code on the host. New behavioral equivalences require reviewed references or a separately designed sandbox.
+
+The standalone live benchmark reuses the production Responses client and prompt, defaults to dry-run planning, and requires explicit request/output limits and budget/rate assumptions before execution. It uses only synthetic fixture context. Working benchmark artifacts may contain that public synthetic source and are gitignored under `benchmarks/runs/`. Deliberately reviewed public synthetic captures may be preserved as compressed, hash-indexed research artifacts under `docs/benchmarks/artifacts/` for cross-session reproducibility. Both locations are excluded from the VSIX and do not alter source-free runtime statistics. Never archive private dogfood source or credentials. Record missing usage as unknown and preserve full budget reservations after early stops.
+
+## Rationale
+
+The GL-06 corpus audit reproduced the original F2/F3 failures on the historical processor and found a remaining nested-brace boundary defect in the current implementation. Unit-test success and exact-match rates alone are insufficient evidence. CRLF normalization also changed four oracle strings without breaking their behavior, so formatting changes must not automatically be labeled corruption. A declared planning budget bounds intended work but is not a provider billing guarantee. No prompt-quality or editor-latency claim follows from an offline oracle run.
+
+---
+
+# ADR-037: Wait for Protocol Completion and Check Delimiter Ownership
+
+## Status
+
+Accepted during the GL-07 prerequisite repair, 2026-09-16.
+
+## Decision
+
+Disable suffix-similarity stream termination. A response is complete only after the Responses protocol says so; cancellation, the existing timeout, and the server output-token cap still bound work. Keep the early-stop field for compatibility with historical benchmark captures, but the current client does not deliberately stop on suffix text.
+
+For final cleanup, preserve closing delimiters belonging to openings generated in the insertion. Consider trimming a delimiter-only suffix echo only with an available full prefix, a cursor in recognized code, and matching prefix-owned openings. Prefix ownership alone is insufficient: preserve an already-balanced reconstruction; trim only if the original reconstruction has unmatched closers and trimming yields balanced delimiters. This is a deliberately limited lexer for Go, TypeScript/JavaScript and JSON/JSONC, not a general syntax validator. Recognized strings/comments are ignored structurally; ambiguous regex/template states, mixed ownership, or a truncated prefix prevent confident trimming. Reject substantial uncertain overlaps instead of deleting source. Other language punctuation stays unchanged. Significant terminal spaces continue to be preserved.
+
+## Rationale
+
+GL-06 demonstrated that an inner block's final `\n}` could be mistaken for the outer function's existing suffix. Even a long match can be intentional source, and text-delta boundaries can expose shorter transient matches. A completed-response fallback avoids inventing success before a later incomplete/failed event, and makes output-budget comparisons and usage accounting meaningful. The updated regression suite covers nested Go/TypeScript/JSON braces, literals/comments, ambiguous syntax, prefix truncation, and multibyte SSE chunks. The authored corpus retains its prior outcomes.
+
+This may reject useful ambiguous completions and may increase latency compared with a valid early stop. Measure those costs in GL-07; do not reintroduce a similarity-based cutoff to improve a latency number. No claim of universal syntax preservation follows from this limited check.
+
+---
+
+# ADR-038: Preserve Insertion-Only Editing After the Fragment Experiment
+
+## Status
+
+Accepted after GL-07b, 2026-09-17.
+
+## Decision
+
+Keep the P0 insertion-only prompt and an empty editor replacement range. Preserve the exact-prefix full-fragment derivation as a benchmark strategy, not production behavior. Any future reconstruction strategy must exactly match already typed source before deriving an insertion; mismatch means no suggestion and never silent replacement.
+
+Version the synthetic corpus as V2 for the repaired CRLF cursor, UTF-16/position validation and new contract/context families. Retain V1 and its hash for historical capture replay. Keep the original 56-case holdout unused for prompt tuning.
+
+## Rationale
+
+Across 36 attempts per arm, P4 was faster but produced 7 recognized reference/data matches versus P0's 12 and 18 unexpected empty insertions versus 3. Seven full-fragment responses failed the prefix check and four repeated only the typed fragment; the derivation rejected all safely. The result supports the safety contract but not promotion.
+
+---
+
+# ADR-039: Keep Selected Same-File Context Experimental
+
+## Status
+
+Accepted after GL-08, 2026-09-17.
+
+## Decision
+
+Provide bounded selected same-file context behind `glide.sameFileContext`, default `false`. Selection may inspect only the active eligible document, up to 500,000 source characters, and may transmit at most 2,000 selected characters. It has a 25 ms deadline, two-call concurrency cap, cancellation/staleness checks, adjacent deduplication and a cache-identity field. Do not add cross-file retrieval or a persistent index.
+
+## Rationale
+
+The selected C2 arm matched 18/24 dependency-family samples by the frozen reference/data proxy, compared with 21/24 for the smaller adjacent C1 arm and 20/24 for C0. The five-family interval was wide and YAML regressed. The implementation is useful for controlled dogfood, but the evidence does not justify expanding default transmission.
+
+---
+
+# ADR-040: Separate Explicit and Automatic Completion Timing
+
+## Status
+
+Accepted after GL-09 machine validation, 2026-09-17.
+
+## Decision
+
+Retain a fixed 175 ms automatic debounce. Explicit VS Code inline-completion invocation bypasses that delay and automatic-only noise suppressions while retaining trust, sensitive-file, credential, endpoint, selection and size guards. Local statistics separately count automatic and explicit opportunities and estimate active editing time from bounded inter-opportunity intervals.
+
+## Rationale
+
+Deterministic traces showed that 75/175/300 ms would issue 18/13/8 requests for the same 29 opportunities, while each produced six results before the next edit under the trace assumptions. The trace does not measure distraction or usefulness, so it does not support a default change. Immediate explicit invocation is user-requested work and has direct lifecycle/editor tests.
+
+---
+
+# ADR-041: Observe Automatic Prompt Caching Without Stable Identifiers
+
+## Status
+
+Accepted after GL-10, 2026-09-17.
+
+## Decision
+
+Parse and preserve Responses cached-input, cache-write-input and reasoning-output token details. Rely on provider automatic prompt caching when eligible. Do not send a production `prompt_cache_key`, stable user/repository identifier, filler, or retained source history. Keep `store:false` and document that it does not disable provider prompt caching.
+
+## Rationale
+
+The repeated long-context experiment recorded 95,130 cache-read and 47,565 cache-write tokens, but cache-read request latency was not better than cache-write latency in the small interleaved sample. Shorter GL-07b prompts had no cache activity. Accurate usage is valuable; explicit cache controls have no demonstrated editor benefit and would add privacy and identity decisions.
+
+---
+
+# ADR-042: Bundle for the Minimum VS Code Extension Host
+
+## Status
+
+Accepted during GL-11 release-candidate validation, 2026-09-17.
+
+## Decision
+
+Use Node 24 for development tools while bundling production and integration code to the Node 16.14 syntax target supported by the VS Code 1.82 baseline. CI and local release checks run the native editor integration suite on VS Code 1.82 and current stable.
+
+## Rationale
+
+The previous Node 24 bundle target did not match the declared minimum editor runtime. The revised bundle passes the same activation, completion, acceptance, guard and stale-request scenarios on VS Code 1.82.0 and 1.138.0. The package inspection confirms that only the bundled runtime, source map and release assets ship.

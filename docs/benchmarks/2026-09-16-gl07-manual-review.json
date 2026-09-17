@@ -1,0 +1,189 @@
+{
+  "sourceReviewHash": "8d152ddc34fcf3707abfef639724fab0e7d75248ca7afdcf2004fa4810e0013e",
+  "reviewer": "Codex assistant; one static review, no independent human review",
+  "method": "Supplemental review of concrete returned programs against authored reference behavior. No generated program executed; no gold answers or primary scores modified.",
+  "decisions": [
+    {
+      "armId": "P0",
+      "caseId": "go-divide-hole",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same zero-divisor guard, nonnil error, and integer division; only the error message differs. The authored checks do not constrain that wording."
+    },
+    {
+      "armId": "P0",
+      "caseId": "go-divide-typed",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same zero-divisor guard, nonnil error, and integer division; only the error message differs. The authored checks do not constrain that wording."
+    },
+    {
+      "armId": "P1",
+      "caseId": "go-divide-hole",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same zero-divisor guard, nonnil error, and integer division; only the error message differs. The authored checks do not constrain that wording."
+    },
+    {
+      "armId": "P1",
+      "caseId": "go-divide-typed",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same zero-divisor guard, nonnil error, and integer division; only the error message differs. The authored checks do not constrain that wording."
+    },
+    {
+      "armId": "P2",
+      "caseId": "go-divide-hole",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same zero-divisor guard, nonnil error, and integer division; only the error message differs. The authored checks do not constrain that wording."
+    },
+    {
+      "armId": "P2",
+      "caseId": "go-divide-typed",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same zero-divisor guard, nonnil error, and integer division; only the error message differs. The authored checks do not constrain that wording."
+    },
+    {
+      "armId": "P3",
+      "caseId": "go-divide-hole",
+      "repetition": 0,
+      "reconstructedHash": "2f548ff695310e5d66a0bccecd24ddaae7328e1b7a14e2aeff1cfb851bfbd913",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same zero-divisor guard, nonnil error and division; error wording is not part of the authored contract."
+    },
+    {
+      "armId": "P0",
+      "caseId": "go-copy-hole",
+      "repetition": 0,
+      "reconstructedHash": "502470bfcd4fef2d88b7546d5acc6edea39011972955178cab78baee5aaf2d80",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Index/value loop copies every element into the separately allocated output slice, preserving clone behavior."
+    },
+    {
+      "armId": "P1",
+      "caseId": "go-copy-hole",
+      "repetition": 0,
+      "reconstructedHash": "502470bfcd4fef2d88b7546d5acc6edea39011972955178cab78baee5aaf2d80",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Index/value loop copies every element into the separately allocated output slice, preserving clone behavior."
+    },
+    {
+      "armId": "P2",
+      "caseId": "go-copy-hole",
+      "repetition": 0,
+      "reconstructedHash": "502470bfcd4fef2d88b7546d5acc6edea39011972955178cab78baee5aaf2d80",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Index/value loop copies every element into the separately allocated output slice, preserving clone behavior."
+    },
+    {
+      "armId": "P3",
+      "caseId": "go-copy-hole",
+      "repetition": 0,
+      "reconstructedHash": "6b60e4366b9fdcc8a0f39e5fbb33ced846256e1e9eb27180d770c04f8d985eca",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Index/value loop copies every element into the separately allocated output slice, preserving clone behavior."
+    },
+    {
+      "armId": "P3",
+      "caseId": "go-copy-typed",
+      "repetition": 0,
+      "reconstructedHash": "d8d3f24f3d6a182d1ee434205a71fd04d83e20caa91ce5fa4e0c09252c5a243c",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "The insertion is the same copy(out, xs) call with an extra blank line."
+    },
+    {
+      "armId": "P0",
+      "caseId": "go-closure-hole",
+      "repetition": 0,
+      "reconstructedHash": "dece0742a6db27aabce13d6636b176e4ee0a41915cebec40f18ca1c842eecd47",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "x + n and n + x produce the same Go integer result; the closure captures the same n."
+    },
+    {
+      "armId": "P1",
+      "caseId": "go-closure-hole",
+      "repetition": 0,
+      "reconstructedHash": "dece0742a6db27aabce13d6636b176e4ee0a41915cebec40f18ca1c842eecd47",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "x + n and n + x produce the same Go integer result; the closure captures the same n."
+    },
+    {
+      "armId": "P2",
+      "caseId": "go-closure-hole",
+      "repetition": 0,
+      "reconstructedHash": "dece0742a6db27aabce13d6636b176e4ee0a41915cebec40f18ca1c842eecd47",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "x + n and n + x produce the same Go integer result; the closure captures the same n."
+    },
+    {
+      "armId": "P3",
+      "caseId": "go-closure-hole",
+      "repetition": 0,
+      "reconstructedHash": "ea76d4cb109e6e1a5f8cad57aa8ed832ed36663d3e92b6086a9baa3ca744b35d",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "x + n and n + x produce the same Go integer result; the closure captures the same n."
+    },
+    {
+      "armId": "P0",
+      "caseId": "go-struct-hole",
+      "repetition": 0,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P1",
+      "caseId": "go-struct-hole",
+      "repetition": 0,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P2",
+      "caseId": "go-struct-hole",
+      "repetition": 0,
+      "reconstructedHash": "4e502d29ff2433259dd119a729f4b8555bb2956bfe4c2a8bc2666da6ff00ac32",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P3",
+      "caseId": "go-struct-hole",
+      "repetition": 0,
+      "reconstructedHash": "cc8687ad8227f7b1b3b2fd824c6ad699f4de0b32a5d405cb7e94df23f1c846be",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same Point fields X:x and Y:y; differences are layout and an allowed trailing comma."
+    },
+    {
+      "armId": "P3",
+      "caseId": "go-buffer-hole",
+      "repetition": 0,
+      "reconstructedHash": "5fe4762148bb01bb1d04b7bcbfb1f950f821662c08adbeca26c7cb9c988b6c44",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same buffered-channel send of n; extra blank line does not change behavior."
+    },
+    {
+      "armId": "P3",
+      "caseId": "go-error-hole",
+      "repetition": 0,
+      "reconstructedHash": "a0f0887d55ce94794da1aab0ec70ad50dc0a429c9decd04e5cccd355c927171d",
+      "decision": "statically-reviewed-reference-equivalence",
+      "reason": "Same Atoi error guard returning zero/error, followed by doubling on success; extra blank line only."
+    }
+  ],
+  "counts": {
+    "P0": 5,
+    "P1": 5,
+    "P2": 5,
+    "P3": 7
+  }
+}

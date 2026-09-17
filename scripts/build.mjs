@@ -6,7 +6,9 @@ const options = {
   external: ["vscode"],
   format: "cjs",
   platform: "node",
-  target: "node24",
+  // VS Code 1.82 embeds Node 16.14. Development tooling uses Node 24, but the
+  // bundled extension must remain parseable by the minimum supported host.
+  target: "node16.14",
   outfile: "dist/extension.js",
   sourcemap: true,
   sourcesContent: false,

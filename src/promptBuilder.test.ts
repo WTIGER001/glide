@@ -11,6 +11,7 @@ const context: CompletionContext = {
   suffix: "\n\treturn user\n}",
   cursorLine: 1,
   cursorColumn: 6,
+  cursorOffset: 37,
   linePrefix: "\tuser,",
   indentation: "\t",
   insertSpaces: false,

@@ -4,6 +4,15 @@ type LogValue = string | number | boolean | null | undefined;
 type LogMetadata = Readonly<Record<string, LogValue>>;
 
 const FORBIDDEN_FIELD = /(code|content|completion|filename|path|prefix|prompt|response|secret|suffix|text|token|uri|api.?key|credential|authorization|header)/i;
+const SAFE_NUMERIC_FIELDS = new Set([
+  "firstTokenMs",
+  "inputTokens",
+  "outputTokens",
+  "latencyMs",
+  "outputCharacters",
+  "generation",
+  "status"
+]);
 
 export class DiagnosticLogger {
   public constructor(
@@ -34,7 +43,8 @@ export class DiagnosticLogger {
   private write(name: string, metadata: LogMetadata): void {
     const safe: Record<string, Exclude<LogValue, undefined>> = {};
     for (const [key, value] of Object.entries(metadata)) {
-      if (FORBIDDEN_FIELD.test(key) || value === undefined) {
+      const safeNumeric = SAFE_NUMERIC_FIELDS.has(key) && typeof value === "number" && Number.isFinite(value);
+      if ((!safeNumeric && FORBIDDEN_FIELD.test(key)) || value === undefined) {
         continue;
       }
       safe[key] =

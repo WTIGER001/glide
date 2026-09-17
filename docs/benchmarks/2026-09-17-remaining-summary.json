@@ -1,0 +1,48 @@
+{
+  "sessionDate": "2026-09-17 America/New_York",
+  "decision": "Retain P0, fixed96, fixed 175 ms automatic debounce, and adjacent context by default; keep same-file selection opt-in; defer explicit prompt-cache controls.",
+  "humanGate": "Five primarily-Go real coding sessions and a publish/no-publish decision remain.",
+  "checks": {
+    "unitTests": 121,
+    "minimumVscode": "1.82.0 passed",
+    "stableVscode": "1.138.0 passed",
+    "corpusCases": 186,
+    "trustedReferences": 90,
+    "completionSyntaxChecks": 166,
+    "minimalRegressions": 8,
+    "vsixSha256": "ea565933de87e731cf541c6793b245fda328d50a372c16b9d4ae19591373f11d"
+  },
+  "budget": {
+    "authorizedUsd": 2,
+    "priorReservedUsd": 0.66109435,
+    "newReservedUsd": 0.27426615,
+    "cumulativeReservedUsd": 0.9353605,
+    "priorKnownUsageEstimateUsd": 0.044572,
+    "newKnownUsageEstimateBeforeCacheAdjustmentUsd": 0.0332376,
+    "cumulativeKnownUsageEstimateBeforeCacheAdjustmentUsd": 0.0778096,
+    "unknownCostSamples": 1,
+    "caveat": "Planning reservations are not an invoice; the unknown sample is the earlier GL-07 cancellation. The GL-08 cache-adjusted estimate is documented separately."
+  },
+  "fragment": {
+    "requests": 72,
+    "p0ReferenceOrDataMatches": 12,
+    "p4ReferenceOrDataMatches": 7,
+    "p0UnexpectedEmpty": 3,
+    "p4UnexpectedEmpty": 18,
+    "decision": "retain P0"
+  },
+  "context": {
+    "requests": 90,
+    "c0ReferenceOrDataMatches": 26,
+    "c1ReferenceOrDataMatches": 27,
+    "c2ReferenceOrDataMatches": 24,
+    "decision": "keep selected context disabled by default"
+  },
+  "promptCaching": {
+    "cachedInputTokens": 95130,
+    "cacheWriteInputTokens": 47565,
+    "cacheAdjustedEstimateUsd": 0.01547505,
+    "uncachedRateEstimateUsd": 0.0302202,
+    "decision": "automatic only; no production cache key"
+  }
+}

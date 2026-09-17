@@ -14,11 +14,13 @@ export const COMPLETION_INSTRUCTIONS = [
 ].join("\n");
 
 export function buildCompletionInput(context: CompletionContext): string {
+  const related = context.relatedContext?.trim() ? ["", "<GLIDE_RELATED_SAME_FILE>", context.relatedContext, "</GLIDE_RELATED_SAME_FILE>"] : [];
   return [
     `Prompt-Version: ${PROMPT_VERSION}`,
     `Language: ${context.language}`,
     `File: ${context.filename}`,
     `Cursor-Column: ${context.cursorColumn}`,
+    ...related,
     "",
     "<GLIDE_BEFORE>",
     context.prefix,

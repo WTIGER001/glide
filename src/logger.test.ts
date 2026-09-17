@@ -35,4 +35,22 @@ describe("DiagnosticLogger", () => {
     logger.event("completion.ready", { status: 200 });
     expect(appendLine).not.toHaveBeenCalled();
   });
+
+  it("allows only explicitly safe numeric token and timing diagnostics", () => {
+    const appendLine = vi.fn();
+    const logger = new DiagnosticLogger({ appendLine } as never, () => true);
+    logger.event("completion.ready", {
+      inputTokens: 20,
+      outputTokens: 4,
+      firstTokenMs: 120,
+      promptTokensRaw: 99,
+      completionText: "secret"
+    });
+    const line = String(appendLine.mock.calls[0]?.[0]);
+    expect(line).toContain('"inputTokens":20');
+    expect(line).toContain('"outputTokens":4');
+    expect(line).toContain('"firstTokenMs":120');
+    expect(line).not.toContain("promptTokensRaw");
+    expect(line).not.toContain("secret");
+  });
 });

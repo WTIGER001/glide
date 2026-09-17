@@ -1,10 +1,10 @@
 # Glide V1 Design Specification
 
-**Status:** proposed for implementation  
-**Product:** Glide (`wtiger001.glide-code-completion`)  
+**Status:** machine-validated release candidate; five-session human usability gate remains
+**Product:** Glide (`wtiger001.glide`)
 **License:** MIT — Copyright (c) 2026 John Bauer  
 **Target:** desktop VS Code only  
-**Last updated:** 2026-09-07
+**Last updated:** 2026-09-17
 
 ## 1. Purpose
 
@@ -35,7 +35,7 @@ The first runtime target is OpenAI's Responses API with GPT-5.6 Luna, Terra, or 
 - Securely store an API key with VS Code SecretStorage; support `OPENAI_API_KEY` as an environment fallback.
 - Clean model output before it reaches the editor.
 - Provide local-only statistics, diagnostic logging, a connection test, and VSIX packaging.
-- Optimize initial quality testing for Go; keep the pipeline language-independent and test TypeScript and Python.
+- Optimize initial quality testing for Go; keep the pipeline language-independent and test TypeScript, Python, YAML, and JSON.
 
 ### 3.2 Explicit non-goals
 
@@ -129,12 +129,13 @@ All configuration is scoped under `glide`. Settings marked “advanced” remain
 |---|---|---|
 | `glide.enabled` | boolean, `true` | Enables ghost-text completion. |
 | `glide.baseUrl` | string, `https://api.openai.com/v1` | Advanced Responses-compatible base URL. Glide appends the Responses path and expands Azure AI Foundry project URLs to `/openai/v1/responses`. V1 has no Chat Completions or FIM compatibility. |
-| `glide.authentication` | enum, `bearer` | Sends the credential as either `Authorization: Bearer` (OpenAI, LiteLLM, Microsoft Entra) or Azure's `api-key` header. |
+| `glide.authentication` | enum, `bearer` | Sends the credential as either `Authorization: Bearer` (OpenAI or Microsoft Entra) or Azure's `api-key` header. |
 | `glide.model` | enum, `gpt-5.6-luna` | `gpt-5.6-luna`, `gpt-5.6-terra`, or `gpt-5.6-sol`. |
 | `glide.modelOverride` | string, empty | Optional exact model or deployment name for Azure AI Foundry and other compatible endpoints; overrides `glide.model`. |
 | `glide.debounceMs` | integer, `175` | Pause required before a request is eligible; range 75–1000. |
 | `glide.maxPrefixChars` | integer, `24000` | Maximum current-file text before cursor (advanced). |
 | `glide.maxSuffixChars` | integer, `6000` | Maximum current-file text after cursor (advanced). |
+| `glide.sameFileContext` | boolean, `false` | Experimental: add at most 2,000 selected characters from the same active file. |
 | `glide.maxCompletionTokens` | integer, `96` | Output cap including reasoning/output limits imposed by the API; range 16–256. |
 | `glide.reasoningEffort` | enum, `none` | `none`, `low`, `medium`, `high`, `xhigh`, `max`; normal completion defaults to `none`. |
 | `glide.requestTimeoutMs` | integer, `8000` | End-to-end client timeout; range 1000–30000. |
@@ -183,7 +184,8 @@ ContextBuilder --> PromptBuilder --> OpenAIResponsesClient
 | `secretStore.ts` | Owns SecretStorage reads/writes; exposes no key to logs. |
 | `completionCoordinator.ts` | Owns one request lifecycle, generation IDs, cache checks, cancellation, and state transitions. |
 | `eligibility.ts` | Cheap synchronous decision: enabled, desktop/trust state, URI scheme, language, protected path, cursor state, and trigger heuristics. |
-| `contextBuilder.ts` | Captures bounded active-document prefix/suffix and language metadata after eligibility/debounce. |
+| `contextBuilder.ts` | Captures bounded active-document prefix/suffix and language metadata after eligibility. |
+| `sameFileContext.ts` | Optionally selects bounded imports/declarations from the active file under a deadline. |
 | `promptBuilder.ts` | Builds a stable, versioned, fill-in-the-middle completion prompt. |
 | `openaiResponsesClient.ts` | Calls `POST /v1/responses`, observes timeout/cancellation, parses response text and usage metadata. |
 | `outputProcessor.ts` | Removes unsafe/non-code output and verifies an insertable suggestion. |
@@ -199,13 +201,10 @@ There is no server, indexer, database, language server, agent runtime, or provid
 ### 8.1 Request state machine
 
 ```text
-Idle -> Debouncing -> BuildingContext -> CacheLookup -> Requesting
-  ^         |                 |               |             |
-  |         +-- superseded ---+---------------+-------------+
-  |                                                        |
-  +---- rejected <--- Processing <--- Completed <----------+
-                         |
-                         +---- Displayed -> Accepted / Ignored -> Idle
+Idle -> Eligibility -> AdjacentContext -> CacheLookup -> Debouncing -> OptionalContext -> Requesting
+  ^          |              |                |              |               |              |
+  +----------+--------------+-- superseded --+--------------+---------------+--------------+
+  +---- rejected/returned <---------------- Processing <--- Completed <-----+
 ```
 
 Every lifecycle has a monotonically increasing `generation` and immutable anchor:
@@ -226,14 +225,13 @@ An output may be displayed only if its anchor still matches the active provider 
 1. VS Code calls the inline completion provider.
 2. Run `Eligibility.check` before any context gathering, disk scanning, or network action.
 3. Increment the active generation and cancel the previous debounce timer and `AbortController` for the same provider instance.
-4. Await the configured debounce; cancellation ends the operation silently.
-5. Recheck eligibility and document version after the asynchronous pause.
-6. Build current-file prefix/suffix context and calculate a stable cache key.
-7. Return a valid in-memory cache hit only when its key and anchor remain current.
-8. Start a request with a new `AbortController`. Register both the VS Code token and timeout to call `controller.abort()`.
-9. On completion, reject the result if aborted, stale, failed, incomplete, empty, over policy limits, or unsafe.
-10. Process the text. Cache only a fresh, displayable result. Return one `InlineCompletionItem` with a zero-width insertion range at the captured cursor.
-11. Record local aggregate outcome metadata. A cache hit does not make a network request.
+4. Build bounded adjacent context and return a validated exact/continuation cache hit immediately when available.
+5. Await the configured debounce for automatic triggers; explicit invocation uses zero delay. Cancellation ends the operation silently.
+6. Recheck eligibility and document version. If enabled, collect bounded same-file declarations under its deadline, then recheck staleness.
+7. Check the cache identity that includes optional context and start a request with a new `AbortController`. Register both the VS Code token and timeout to call `controller.abort()`.
+8. On completion, reject the result if aborted, stale, failed, incomplete, empty, over policy limits, or unsafe.
+9. Process the text. Cache only a fresh, insertable result. Return one `InlineCompletionItem` with a zero-width insertion range at the captured cursor.
+10. Record local aggregate outcome metadata. A cache hit does not make a network request.
 
 ### 8.3 Cancellation rules
 
@@ -376,6 +374,7 @@ For an eligible request, Glide sends only:
 - the selected model and completion settings;
 - stable prompt instructions;
 - active-document prefix/suffix, language identifier, and basename.
+- up to 2,000 selected imports/declarations from that same active document only when `glide.sameFileContext` is enabled.
 
 It does not send absolute paths, repository names, Git state, workspace settings, other open files, telemetry IDs, usage statistics, local cache content, keys, or source from protected files.
 
@@ -386,6 +385,7 @@ It does not send absolute paths, repository names, Git state, workspace settings
 - Aggregate statistics persist in `globalState`, with no source-derived fields.
 - Diagnostic logs include timestamps, event classes, model, language identifier, numeric durations/counts, HTTP status class, and cancellation reason only.
 - `store: false` is always present in the Responses request.
+- Eligible prompt prefixes may be cached automatically by OpenAI under its API policy; Glide sends no prompt-cache key or stable user/repository identifier.
 
 ### 13.3 Supply-chain and release requirements
 
@@ -402,12 +402,13 @@ Statistics are opt-in to viewing but always local. They reset only with the expl
 | Metric | Notes |
 |---|---|
 | Requests started/completed/failed/cancelled/timed out | Classified counters only. |
+| Automatic/explicit opportunities and bounded active editing time | Separates trigger policy and supports accepted characters per active minute. |
 | Cache hits and in-flight deduplications | Measures local responsiveness. |
 | End-to-end latency | Request start to response completion. |
 | Time to displayable result | Includes output processing. |
-| Suggestions returned/displayed | Distinguishes model output from valid UI output. |
+| Suggestions returned | Counts valid items returned by the inline provider; this is not presented as proof that VS Code rendered them. |
 | Suggestions accepted/ignored | Determined from VS Code events where available; otherwise explicitly labeled unavailable. |
-| Characters displayed/accepted | Aggregate counts only. |
+| Characters returned/accepted | Aggregate counts only. |
 | Selected model and language identifier | Aggregate buckets; no filenames. |
 
 V1 must not claim acceptance metrics that VS Code's inline completion API cannot observe reliably. Any fallback heuristic is documented in the stats view and excluded from headline acceptance-rate calculations.
@@ -489,9 +490,8 @@ The following are intentionally deferred until measurement justifies them:
 
 - streaming partial completion;
 - adaptive debounce;
-- current-document symbol extraction;
 - optional bounded context from explicitly selected files;
-- prompt caching strategies;
+- explicit prompt-cache keys or breakpoints;
 - model-specific prompt variants;
 - semantic repository retrieval, gateways, other providers, and local models;
 - next-edit/cross-file suggestions and any agent capability.
