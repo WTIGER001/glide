@@ -24,6 +24,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const status = new GlideStatusBar(secrets);
   let authenticationNoticeShown = false;
   let transportError = false;
+  let completionRequesting = false;
+  let connectionTests = 0;
+  const refreshRequesting = (): void => status.setRequesting(completionRequesting || connectionTests > 0);
 
   const coordinator = new CompletionCoordinator({
     secrets,
@@ -32,14 +35,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     logger,
     client,
     sameFileContextProvider: new BoundedSameFileContextProvider(),
-    setRequesting: (requesting) => status.setRequesting(requesting),
+    setRequesting: (requesting) => {
+      completionRequesting = requesting;
+      refreshRequesting();
+    },
     onAuthenticationError: () => {
-      status.setError(true);
+      status.setError("authentication");
       if (authenticationNoticeShown) {
         return;
       }
       authenticationNoticeShown = true;
-      void vscode.window.showWarningMessage("Glide could not authenticate with the Responses endpoint.", "Set API Key").then(
+      void vscode.window.showWarningMessage("Glide could not authenticate. Automatic requests are paused until you update configuration or retry explicitly.", "Set API Key").then(
         async (choice) => {
           if (choice === "Set API Key") {
             await vscode.commands.executeCommand("glide.setApiKey");
@@ -75,6 +81,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         return;
       }
       coordinator.cancel("configuration-change");
+      coordinator.resetTransportState();
+      authenticationNoticeShown = false;
       cache.clear();
       cache.setCapacity(readConfiguration().cacheCapacity);
       transportError = false;
@@ -113,6 +121,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
       const endpoint = await setBaseUrl(baseUrl);
       coordinator.cancel("base-url-changed");
+      coordinator.resetTransportState();
       cache.clear();
       transportError = false;
       status.setError(false);
@@ -132,6 +141,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
       coordinator.cancel("key-changed");
       await secrets.setApiKey(key);
+      coordinator.cancel("key-changed");
+      coordinator.resetTransportState();
       authenticationNoticeShown = false;
       transportError = false;
       status.setError(false);
@@ -142,6 +153,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     register("glide.removeApiKey", async () => {
       coordinator.cancel("key-removed");
       await secrets.removeApiKey();
+      coordinator.cancel("key-removed");
+      coordinator.resetTransportState();
+      authenticationNoticeShown = false;
+      transportError = false;
+      status.setError(false);
       cache.clear();
       status.refresh();
       void vscode.window.showInformationMessage("Glide removed the saved credential.");
@@ -179,7 +195,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         return;
       }
       const controller = new AbortController();
-      status.setRequesting(true);
+      connectionTests += 1;
+      refreshRequesting();
       try {
         const result = await client.complete(
           {
@@ -197,6 +214,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           controller.signal
         );
         if (result.status === "completed" && result.text.trim() === "OK") {
+          coordinator.resetTransportState();
+          authenticationNoticeShown = false;
           transportError = false;
           status.setError(false);
           void vscode.window.showInformationMessage(`Glide connected successfully using ${configuration.model}.`);
@@ -207,6 +226,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         transportError = true;
         status.setError(true);
         const statusCode = error instanceof ResponsesApiError ? error.statusCode : undefined;
+        if (statusCode === 401 || statusCode === 403) {
+          coordinator.pauseForAuthenticationFailure();
+          status.setError("authentication");
+        }
         logger.importantError(
           statusCode === 401 || statusCode === 403 ? "connection-test.authentication-failed" : "connection-test.failed",
           {
@@ -223,7 +246,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             : "Glide could not complete the connection test. Open the diagnostic log for metadata-only details."
         );
       } finally {
-        status.setRequesting(false);
+        connectionTests -= 1;
+        refreshRequesting();
       }
     })
   );

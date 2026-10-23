@@ -32,7 +32,7 @@ Glide is a lightweight VS Code extension for predictive inline code completion.
 - Preserve the normal VS Code Tab acceptance workflow and support useful multiline completions.
 - The first milestone is an installable VSIX that can be dogfooded in normal development.
 - Target desktop VS Code only; browser-based VS Code environments are out of scope.
-- Prepare the project for public VS Code Marketplace release under the `wtiger001.glide` identity, with repository URL `https://github.com/wtiger001/glide`. Use publishable metadata, clear documentation, the MIT license with `John Bauer` as copyright holder, and no hard-coded credentials or private infrastructure assumptions.
+- Preserve the existing VS Code Marketplace identity `wtiger001.glide-code-completion` (`package.json` name `glide-code-completion`), with repository URL `https://github.com/wtiger001/glide`. Display branding may change without changing this identity. Use publishable metadata, clear documentation, the MIT license with `John Bauer` as copyright holder, and no hard-coded credentials or private infrastructure assumptions.
 - Prioritize Go quality first, while keeping the core language-independent and testing TypeScript and Python as well.
 
 ## Quality and change discipline

@@ -41,7 +41,19 @@ export enum InlineCompletionTriggerKind {
   Invoke = 1
 }
 
+export const StatusBarAlignment = { Right: 2 };
+export class MockStatusBarItem {
+  public name = "";
+  public text = "";
+  public tooltip = "";
+  public command = "";
+  public show(): void {}
+  public dispose(): void {}
+}
+export const statusBarItems: MockStatusBarItem[] = [];
+
 export const window: {
+  createStatusBarItem: () => MockStatusBarItem;
   activeTextEditor:
     | {
         document: { uri: { toString(): string } };
@@ -49,7 +61,14 @@ export const window: {
         options: { insertSpaces: boolean; tabSize: number };
       }
     | undefined;
-} = { activeTextEditor: undefined };
+} = {
+  activeTextEditor: undefined,
+  createStatusBarItem: () => {
+    const item = new MockStatusBarItem();
+    statusBarItems.push(item);
+    return item;
+  }
+};
 
 export const workspace = {
   isTrusted: true,

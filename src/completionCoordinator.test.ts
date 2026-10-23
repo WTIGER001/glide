@@ -67,7 +67,7 @@ function result(text: string): ResponsesCompletionResult {
 
 function dependencies(complete: OpenAIResponsesClient["complete"]): CompletionCoordinatorDependencies {
   return {
-    secrets: { hasApiKey: () => true, getApiKey: () => "test-key" } as CompletionCoordinatorDependencies["secrets"],
+    secrets: { hasApiKey: () => true, getApiKey: () => "test-key", isCredentialFile: () => Promise.resolve(false) } as unknown as CompletionCoordinatorDependencies["secrets"],
     cache: new CompletionCache(64),
     statistics: {
       opportunity: vi.fn(),
@@ -357,10 +357,10 @@ describe("CompletionCoordinator", () => {
     expect(calls).toHaveLength(2);
 
     const setRequesting = deps.setRequesting as ReturnType<typeof vi.fn>;
-    expect(setRequesting.mock.calls).toEqual([[true], [true]]);
+    expect(setRequesting.mock.calls).toEqual([[true], [false], [true]]);
     calls[1]?.resolve(result("n()"));
     await second;
-    expect(setRequesting.mock.calls).toEqual([[true], [true], [false]]);
+    expect(setRequesting.mock.calls).toEqual([[true], [false], [true], [false]]);
     expect(await first).toBeUndefined();
   });
 
@@ -420,5 +420,117 @@ describe("CompletionCoordinator", () => {
     expect(signal?.aborted).toBe(true);
     expect(deps.cache.size).toBe(0);
     expect(await pending).toBeUndefined();
+  });
+
+  it("blocks the configured credential target before reading context, even with sensitive-file opt-in", async () => {
+    setMockConfiguration({ allowSensitiveFiles: true });
+    const complete = vi.fn(() => Promise.resolve(result("in()")));
+    const deps = dependencies(complete);
+    deps.secrets.isCredentialFile = () => Promise.resolve(true);
+    const coordinator = new CompletionCoordinator(deps);
+    const document = documentOf("synthetic-credential");
+    const readText = vi.spyOn(document, "getText");
+    const position = new vscode.Position(0, 20);
+    activateEditor(document, position);
+    expect(await coordinator.provideInlineCompletionItems(document as unknown as vscode.TextDocument, position,
+      { triggerKind: 1, selectedCompletionInfo: undefined }, token())).toBeUndefined();
+    expect(readText).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+  });
+
+  it("clears the spinner immediately when a pending request is replaced by a suppressed trigger", async () => {
+    let finish: ((value: ResponsesCompletionResult) => void) | undefined;
+    const deps = dependencies(() => new Promise((resolve) => { finish = resolve; }));
+    const coordinator = new CompletionCoordinator(deps);
+    const firstDocument = documentOf("func ma");
+    const firstPosition = new vscode.Position(0, 7);
+    activateEditor(firstDocument, firstPosition);
+    const first = coordinator.provideInlineCompletionItems(firstDocument as unknown as vscode.TextDocument, firstPosition,
+      { triggerKind: 0, selectedCompletionInfo: undefined }, token());
+    await vi.advanceTimersByTimeAsync(75);
+    expect(deps.setRequesting).toHaveBeenLastCalledWith(true);
+    const secondDocument = documentOf("call()");
+    const secondPosition = new vscode.Position(0, 6);
+    activateEditor(secondDocument, secondPosition);
+    const second = coordinator.provideInlineCompletionItems(secondDocument as unknown as vscode.TextDocument, secondPosition,
+      { triggerKind: 0, selectedCompletionInfo: undefined }, token());
+    expect(deps.setRequesting).toHaveBeenLastCalledWith(false);
+    expect(await second).toBeUndefined();
+    finish?.(result("in()"));
+    expect(await first).toBeUndefined();
+    expect(deps.setRequesting).toHaveBeenCalledTimes(2);
+  });
+
+  async function invoke(coordinator: CompletionCoordinator, text = "func ma", explicit = false) {
+    const document = documentOf(text);
+    const position = new vscode.Position(0, text.length);
+    activateEditor(document, position);
+    const pending = coordinator.provideInlineCompletionItems(document as unknown as vscode.TextDocument, position,
+      { triggerKind: explicit ? 1 : 0, selectedCompletionInfo: undefined }, token());
+    await vi.advanceTimersByTimeAsync(75);
+    return pending;
+  }
+
+  it.each([401, 403])("pauses automatic requests after HTTP %s and resumes after a successful explicit retry", async (status) => {
+    const complete = vi.fn<OpenAIResponsesClient["complete"]>()
+      .mockRejectedValueOnce(new ResponsesApiError("Authentication failed.", status))
+      .mockResolvedValue(result("in()"));
+    const deps = dependencies(complete);
+    const coordinator = new CompletionCoordinator(deps);
+    expect(await invoke(coordinator)).toBeUndefined();
+    expect(await invoke(coordinator)).toBeUndefined();
+    expect(complete).toHaveBeenCalledTimes(1);
+    expect(deps.onAuthenticationError).toHaveBeenCalledTimes(1);
+    expect(deps.setRequesting).toHaveBeenLastCalledWith(false);
+    expect((await invoke(coordinator, "func ma", true))?.[0]?.insertText).toBe("in()");
+    await invoke(coordinator, "func other");
+    expect(complete).toHaveBeenCalledTimes(3);
+  });
+
+  it("resumes after configuration/key reset or a successful connection test", async () => {
+    const complete = vi.fn<OpenAIResponsesClient["complete"]>()
+      .mockRejectedValueOnce(new ResponsesApiError("Authentication failed.", 401))
+      .mockResolvedValue(result("in()"));
+    const coordinator = new CompletionCoordinator(dependencies(complete));
+    await invoke(coordinator);
+    coordinator.resetTransportState();
+    expect((await invoke(coordinator))?.[0]?.insertText).toBe("in()");
+    expect(complete).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignores late authentication failures after cancellation and configuration reset", async () => {
+    let reject: ((error: unknown) => void) | undefined;
+    const complete = vi.fn<OpenAIResponsesClient["complete"]>()
+      .mockImplementationOnce(() => new Promise((_resolve, rejectRequest) => { reject = rejectRequest; }))
+      .mockResolvedValue(result("in()"));
+    const deps = dependencies(complete);
+    const coordinator = new CompletionCoordinator(deps);
+    const document = documentOf("func ma");
+    const position = new vscode.Position(0, 7);
+    activateEditor(document, position);
+    const pending = coordinator.provideInlineCompletionItems(document as unknown as vscode.TextDocument, position,
+      { triggerKind: 0, selectedCompletionInfo: undefined }, token());
+    await vi.advanceTimersByTimeAsync(75);
+    coordinator.cancel("configuration-change");
+    coordinator.resetTransportState();
+    reject?.(new ResponsesApiError("Authentication failed.", 401));
+    expect(await pending).toBeUndefined();
+    expect(deps.onAuthenticationError).not.toHaveBeenCalled();
+    expect((await invoke(coordinator))?.[0]?.insertText).toBe("in()");
+  });
+
+  it.each([false, true])("backs off after transport failures (timeout=%s)", async (timeout) => {
+    const complete = vi.fn<OpenAIResponsesClient["complete"]>()
+      .mockRejectedValueOnce(new ResponsesApiError("Request failed.", undefined, timeout))
+      .mockResolvedValue(result("in()"));
+    const deps = dependencies(complete);
+    const coordinator = new CompletionCoordinator(deps);
+    await invoke(coordinator);
+    await invoke(coordinator);
+    expect(complete).toHaveBeenCalledTimes(1);
+    expect(deps.onTransportError).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect((await invoke(coordinator))?.[0]?.insertText).toBe("in()");
+    expect(complete).toHaveBeenCalledTimes(2);
   });
 });

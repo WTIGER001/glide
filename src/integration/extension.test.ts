@@ -7,7 +7,7 @@ import path from "node:path";
 import * as vscode from "vscode";
 
 export async function testActivationAndCommands(): Promise<void> {
-  const extension = vscode.extensions.getExtension("wtiger001.glide");
+  const extension = vscode.extensions.getExtension("wtiger001.glide-code-completion");
   assert.ok(extension, "the Glide extension should be installed in the test host");
   await extension.activate();
   assert.equal(extension.isActive, true);
@@ -36,7 +36,9 @@ export function testConfigurationDefaults(): void {
 
 export async function testNativeInlineCompletionAndAcceptance(): Promise<void> {
   const requests: string[] = [];
+  let fixtureCredentialsOnly = true;
   const server = createServer((request, response) => {
+    fixtureCredentialsOnly &&= request.headers.authorization === "Bearer synthetic-integration-key";
     let body = "";
     request.setEncoding("utf8");
     request.on("data", (chunk: string) => {
@@ -67,6 +69,7 @@ export async function testNativeInlineCompletionAndAcceptance(): Promise<void> {
   const configuration = vscode.workspace.getConfiguration("glide");
   const previousBaseUrl = configuration.inspect<string>("baseUrl")?.globalValue;
   const previousDebounce = configuration.inspect<number>("debounceMs")?.globalValue;
+  const previousSensitive = configuration.inspect<boolean>("allowSensitiveFiles")?.globalValue;
   const previousKey = process.env.OPENAI_API_KEY;
   try {
     // The test host must never prefer a credential retained by an earlier run.
@@ -86,6 +89,7 @@ export async function testNativeInlineCompletionAndAcceptance(): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     assert.equal(requests.length, 1, "the fixture should observe one provider request");
+    assert.equal(fixtureCredentialsOnly, true, "integration requests must use only the isolated synthetic credential");
     await new Promise((resolve) => setTimeout(resolve, 50));
     await vscode.commands.executeCommand("editor.action.inlineSuggest.commit");
     assert.equal(document.getText(), "func main() {\n\treturn nil\n}");
@@ -101,15 +105,27 @@ export async function testNativeInlineCompletionAndAcceptance(): Promise<void> {
     assert.equal(requests.length, 1, "disabled Glide must not request a completion");
     await vscode.commands.executeCommand("glide.enable");
 
-    const protectedPath = path.join(directory, ".env.local");
-    await writeFile(protectedPath, "OPENAI_API_KEY=synthetic", "utf8");
-    const protectedDocument = await vscode.workspace.openTextDocument(protectedPath);
-    const protectedEditor = await vscode.window.showTextDocument(protectedDocument);
-    const protectedPosition = new vscode.Position(0, protectedDocument.getText().length);
-    protectedEditor.selection = new vscode.Selection(protectedPosition, protectedPosition);
-    await vscode.commands.executeCommand("editor.action.inlineSuggest.trigger");
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    assert.equal(requests.length, 1, "protected files must not reach the endpoint");
+    const assertProtected = async (file: string) => {
+      const protectedDocument = await vscode.workspace.openTextDocument(file);
+      const protectedEditor = await vscode.window.showTextDocument(protectedDocument);
+      const protectedPosition = new vscode.Position(0, protectedDocument.getText().length);
+      protectedEditor.selection = new vscode.Selection(protectedPosition, protectedPosition);
+      await vscode.commands.executeCommand("editor.action.inlineSuggest.trigger");
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      assert.equal(requests.length, 1, "protected files must not reach the endpoint");
+    };
+    for (const name of [".env.local", "id_ed25519", ".npmrc", ".pypirc"]) {
+      const file = path.join(directory, name);
+      await writeFile(file, "SYNTHETIC_SECRET=fixture", "utf8");
+      await assertProtected(file);
+    }
+    const configHome = process.env.XDG_CONFIG_HOME;
+    const keyTarget = process.env.GLIDE_TEST_KEY_TARGET;
+    assert.ok(configHome && keyTarget, "the runner must isolate the credential-file fixture");
+    await configuration.update("allowSensitiveFiles", true, vscode.ConfigurationTarget.Global);
+    await assertProtected(path.join(configHome, "glide", "apikey"));
+    await assertProtected(keyTarget);
+    await configuration.update("allowSensitiveFiles", previousSensitive, vscode.ConfigurationTarget.Global);
 
     const escapePath = path.join(directory, "escape.go");
     await writeFile(escapePath, "func esca", "utf8");
@@ -141,6 +157,7 @@ export async function testNativeInlineCompletionAndAcceptance(): Promise<void> {
   } finally {
     await configuration.update("baseUrl", previousBaseUrl, vscode.ConfigurationTarget.Global);
     await configuration.update("debounceMs", previousDebounce, vscode.ConfigurationTarget.Global);
+    await configuration.update("allowSensitiveFiles", previousSensitive, vscode.ConfigurationTarget.Global);
     if (previousKey === undefined) {
       delete process.env.OPENAI_API_KEY;
     } else {

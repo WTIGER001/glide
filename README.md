@@ -24,13 +24,14 @@ Glide now has an installable V1 foundation with:
 * direct OpenAI Responses API requests with Luna as the default,
 * private stream consumption followed by atomic display,
 * real fetch cancellation, request timeouts, generation IDs, and stale-editor validation,
+* a request spinner that clears on cancellation, automatic-request pause after authentication failures, and bounded backoff for network failures,
 * bounded prefix and suffix context from the active file,
 * protected-file and workspace-trust safeguards,
 * response cleanup, suffix/prefix overlap removal, and indentation normalization,
 * exact and type-through continuation caching,
 * immediate explicit invocation with automatic-only debounce and noise suppression,
 * an experimental, disabled-by-default bounded same-file declaration selector,
-* API keys in VS Code SecretStorage with an `OPENAI_API_KEY` environment fallback,
+* API keys in VS Code SecretStorage, with private user-file and `OPENAI_API_KEY` fallbacks,
 * local source-free statistics and metadata-only optional diagnostics.
 
 The initial code intentionally excludes chat, agents, sidebars, repository indexing, embeddings, and cross-file context.
@@ -49,9 +50,25 @@ Glide: Set API Key
 Glide: Test Connection
 ```
 
+Version **0.1.4** preserves the existing Marketplace extension ID **`wtiger001.glide-code-completion`**. Install `glide-code-completion-0.1.4.vsix` to upgrade that extension in place, preserving its SecretStorage credentials and `glide.*` settings. If you installed a test package named `glide-*.vsix` with the separate ID `wtiger001.glide`, disable or uninstall that test extension to avoid duplicate completion providers. Credentials saved only under that separate test identity must be entered again with **Glide: Set API Key**, or supplied through the user-file/environment fallback below.
+
 Glide defaults to `gpt-5.6-luna` and OpenAI's `https://api.openai.com/v1` base URL. Terra and Sol can be selected through `glide.model`. Set `glide.modelOverride` to an Azure deployment name. Glide appends the Responses path to `glide.baseUrl`. For Azure AI Foundry, use the Foundry project URL such as `https://RESOURCE.services.ai.azure.com/api/projects/PROJECT`, which Glide resolves to `/openai/v1/responses`. Set `glide.authentication` to `api-key` for Azure API keys, or leave its `bearer` default for OpenAI and Microsoft Entra tokens. Glide requires HTTPS except for loopback development endpoints.
 
-Glide never reads a workspace `.env` or `.env.local` file. For managed development environments, set `OPENAI_API_KEY` in the VS Code extension host's environment instead. Important failures, including authentication errors, are recorded in the **Glide** Output channel with the normalized endpoint, authentication mode, model/deployment name, and status/category; verbose diagnostics remain opt-in and never include source, prompts, filenames, response text, or credentials.
+Glide never reads a workspace `.env` or `.env.local` file. To keep a credential independent of VS Code's local SecretStorage, Glide also reads the first non-empty line of `$XDG_CONFIG_HOME/glide/apikey`, falling back to `~/.config/glide/apikey`. This file is read only at extension activation; it may be a symbolic link to an IT-managed user-readable secret. On macOS and Linux, Glide ignores the file if its resolved target is readable by group or others, so use mode `0600` (or `0400`). Credential priority is VS Code SecretStorage, then this user file, then `OPENAI_API_KEY` in the VS Code extension host environment. The **Glide: Set API Key** command still writes only to SecretStorage.
+
+For example, create a private file once:
+
+```sh
+mkdir -p ~/.config/glide && chmod 700 ~/.config/glide
+printf '%s\n' "$OPENAI_API_KEY" > ~/.config/glide/apikey
+chmod 600 ~/.config/glide/apikey
+```
+
+Or replace `~/.config/glide/apikey` with a symbolic link whose target has the same restrictive permissions. Important failures, including authentication errors, are recorded in the **Glide** Output channel with the normalized endpoint, authentication mode, model/deployment name, and status/category; verbose diagnostics remain opt-in and never include source, prompts, filenames, response text, or credentials.
+
+Glide excludes common credential files such as SSH keys, `.npmrc`, `.pypirc`, and `.netrc` by default. Its configured API-key file and the target resolved at activation, including aliases to that target, are always excluded from completion context, even with `glide.allowSensitiveFiles` enabled. Relative `XDG_CONFIG_HOME` values are ignored. **Glide: Remove API Key** removes only the SecretStorage credential; a configured file or environment fallback can remain active.
+
+While a request is active, the status icon spins and the model label stays stable. Authentication failures pause automatic requests. Updating settings or credentials, a successful **Glide: Test Connection**, or a successful explicitly invoked completion restores automatic requests. Network failures and timeouts use a bounded cooldown.
 
 ## Develop
 
@@ -63,7 +80,7 @@ npm run check
 npm run package
 ```
 
-The packaged extension is written to `glide-0.1.3.vsix`. Unit tests use synthetic Responses payloads and never require an API key.
+The packaged extension is written to `glide-code-completion-0.1.4.vsix`. Tests use synthetic Responses payloads and never require an API key. Keep full Git history available: benchmark regression tests load the historical processor from a fixed baseline commit. CI fetches that history and runs `npm run benchmark:offline -- --strict --functional --syntax` to fail on boundary, behavior, or syntax failures, including unavailable parsers. The native-editor runner uses an isolated profile and synthetic credential file.
 
 ---
 

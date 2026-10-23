@@ -1,9 +1,9 @@
 {
-  "name": "glide",
+  "name": "glide-code-completion",
   "displayName": "Glide for OpenAI Code Completion",
   "description": "Low-latency AI tab completion for VS Code using OpenAI GPT-5.6 Luna.",
   "icon": "media/glide-icon.png",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "wtiger001",
   "license": "MIT",
   "repository": {
@@ -231,7 +231,7 @@
           "type": "boolean",
           "default": false,
           "scope": "machine-overridable",
-          "description": "Advanced: allow completion requests in files covered by Glide's built-in sensitive-file denylist."
+          "description": "Advanced: allow completion requests in files covered by Glide's built-in sensitive-file denylist. Glide's own credential file and resolved target remain protected."
         },
         "glide.cacheCapacity": {
           "type": "integer",

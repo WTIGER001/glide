@@ -28,13 +28,16 @@ export interface EligibilityInput {
 
 const PROTECTED_BASENAMES = [
   /^\.env(?:\..+)?$/iu,
-  /^id_rsa.*$/iu,
+  /^id_(?:rsa|dsa|ecdsa|ed25519).*$/iu,
+  /^\.(?:npmrc|pypirc|netrc)$/iu,
+  /^_netrc$/iu,
+  /^api[-_]?key(?:\..+)?$/iu,
   /^credentials.*$/iu,
   /^secrets.*$/iu,
   /^package-lock\.json$/iu
 ];
 const PROTECTED_EXTENSIONS = new Set([".pem", ".key", ".p12", ".pfx", ".lock", ".map"]);
-const PROTECTED_DIRECTORIES = new Set([".git", "node_modules", "vendor", "dist", "build"]);
+const PROTECTED_DIRECTORIES = new Set([".git", ".ssh", ".aws", ".gnupg", ".kube", "node_modules", "vendor", "dist", "build"]);
 
 export function protectedPath(filePath: string): boolean {
   const normalized = filePath.replaceAll("\\", "/");

@@ -882,6 +882,26 @@ OpenAI uses bearer credentials, while Azure AI Foundry also supports an `api-key
 
 ---
 
+# ADR-030A: User-Level API-Key File Fallback
+
+## Status
+
+Accepted
+
+## Decision
+
+Keep VS Code SecretStorage as the preferred writable credential store. At extension activation, also permit a private user-owned credential file at `$XDG_CONFIG_HOME/glide/apikey`, or `~/.config/glide/apikey` when `XDG_CONFIG_HOME` is unset. The file is a read-only fallback; its target may be a symbolic link for managed setups. On macOS and Linux, reject a file target readable by group or others. Resolve credentials in this order: SecretStorage, the user file, then `OPENAI_API_KEY`.
+
+## Rationale
+
+Some managed VS Code deployments clear or replace extension storage during maintenance, which forces a user to enter an otherwise stable credential again. A conventional per-user configuration file survives that extension-state reset and can be provisioned or linked by IT without putting a credential in workspace settings or source control. Restrictive target permissions preserve a basic local confidentiality boundary while allowing managed symbolic links. Glide continues to avoid workspace `.env` files and never writes a plaintext key itself.
+
+## Consequences
+
+The **Glide: Set API Key** command still writes exclusively to SecretStorage. Changing the user-level file takes effect after Glide next activates, typically after a VS Code restart or extension-host reload. A missing, unreadable, empty, or permissively readable file is silently ignored in favor of the remaining credential sources.
+
+---
+
 # ADR-031: Allow an Exact Model or Deployment Override
 
 ## Status
@@ -1079,3 +1099,85 @@ Use Node 24 for development tools while bundling production and integration code
 ## Rationale
 
 The previous Node 24 bundle target did not match the declared minimum editor runtime. The revised bundle passes the same activation, completion, acceptance, guard and stale-request scenarios on VS Code 1.82.0 and 1.138.0. The package inspection confirms that only the bundled runtime, source map and release assets ship.
+
+---
+
+# ADR-043: Exclude Credentials from Completion Context
+
+## Status
+
+Accepted for 0.1.4, 2026-10-23.
+
+## Decision
+
+Expand default protected filenames to common SSH keys, package-manager credentials and credential directories. Always exclude Glide's configured user-key path and the target resolved at activation, including other symlink aliases to that target, even when the advanced sensitive-file opt-in is enabled. Resolve aliases asynchronously using filesystem metadata only when a user-key target exists, and recheck editor currency before reading context. Ignore relative `XDG_CONFIG_HOME` values so a user credential fallback cannot become workspace-relative. Integration tests use an isolated editor profile and synthetic key file.
+
+## Rationale
+
+The review reproduced eligibility for `id_ed25519`, `.npmrc`, `.pypirc`, and Glide's own `apikey`. The file fallback introduced a known credential location that must never become prompt source. Tracking its target also protects managed symlinks. This extends ADR-030A without changing credential priority or adding source scanning or telemetry.
+
+---
+
+# ADR-044: Own Request Activity and Pause Failed Authentication
+
+## Status
+
+Accepted for 0.1.4, 2026-10-23.
+
+## Decision
+
+The coordinator owns the loading indicator for its current network request and releases it immediately on cancellation, success, or failure. Late settlement of older work cannot clear newer activity or change transport health. The extension combines completion activity with outstanding connection tests. Keep the model label stable while the icon spins.
+
+After HTTP 401/403, pause automatic network requests while permitting local cache reuse and explicit completion retries. Reset transport state on configuration/credential changes or successful connection/completion retries. Network failures and timeouts use bounded exponential cooldowns of 1–8 seconds; preserve the existing 429 cooldown. Show an actionable authentication-paused tooltip. No automatic retry queue is introduced.
+
+## Rationale
+
+The review reproduced both a permanently spinning status after a suppressed replacement trigger and repeated calls with invalid credentials. Explicit recovery preserves control without recurring failed requests or stale errors from an earlier configuration.
+
+---
+
+# ADR-045: Enforce Offline Correctness in CI
+
+## Status
+
+Accepted for 0.1.4, 2026-10-23.
+
+## Decision
+
+Fetch full history in the deterministic CI job to retain the fixed historical processor baseline. Use `--strict --functional --syntax` for offline release validation. Fail for original/transformed-reference failures, boundary regressions, invalid syntax, missing checks, or unavailable parsers. Preserve permissive experimental reporting without `--strict`; live and replay runs cannot use this oracle-only gate. Validate the CLI exit behavior with a deliberately broken processor compiled in an isolated test artifact.
+
+## Rationale
+
+The default shallow checkout omitted the required baseline. Separately, a simulated processor regression produced boundary, syntax, and behavior failures with exit code zero. Strict validation fixes the release gate while retaining useful research reporting and allowing equivalent formatting changes that preserve behavior and syntax.
+
+---
+
+# ADR-046: Package 0.1.4 Under the Canonical Extension Identity
+
+## Status
+
+Superseded by ADR-047 on 2026-10-23 after the existing Marketplace listing rejected the mismatched package name.
+
+## Decision
+
+Keep the required `wtiger001.glide` identity and build `glide-0.1.4.vsix`. Document that earlier `wtiger001.glide-code-completion` installations are separate extensions: disable or uninstall the old extension, install the new VSIX, and re-enter the SecretStorage key or use an existing user-file/environment fallback. Retain the `glide.*` settings namespace. Prepare this artifact for user testing without publishing it.
+
+## Rationale
+
+Both old and new identities existed in local 0.1.3 artifacts. A versioned package and explicit migration instructions prevent duplicate providers and false expectations about credential or extension updates. The five-session human usability gate remains open.
+
+---
+
+# ADR-047: Preserve the Existing Marketplace Listing Identity
+
+## Status
+
+Accepted for the corrected 0.1.4 package, 2026-10-23. Supersedes ADR-046 and the earlier contributor guidance naming `wtiger001.glide`.
+
+## Decision
+
+Use package name `glide-code-completion` and publisher `wtiger001`, preserving the existing extension ID `wtiger001.glide-code-completion`. Build `glide-code-completion-0.1.4.vsix`; keep the Glide display branding, repository URL, and `glide.*` command/settings namespace. Existing listing installations upgrade in place. Document removal of the separate `wtiger001.glide` test extension if installed. Retain version 0.1.4 because the mismatched upload was rejected.
+
+## Rationale
+
+The user's Marketplace upload failed because the listing path expects `glide-code-completion` while the initial test VSIX declared `glide`. The established listing is direct evidence that the earlier identity change prevents normal release updates. Restoring its immutable package identity avoids a separate listing and preserves the original extension's stored credentials. Validate both VSIX manifests and run native-editor integration against the corrected packaged extension before delivery.

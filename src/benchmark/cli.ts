@@ -16,6 +16,7 @@ import { groupedSummary, scoreCapture, summarize } from "./scoring";
 import type { Capture, Processor } from "./types";
 import type { Language } from "./types";
 import { checkSyntax } from "./syntaxChecks";
+import { oracleValidationFailures } from "./validation";
 
 const BASELINE = "9a31109bac2d20ab110f1f25c6db93f4e72b5392";
 function git(args: string[]): string {
@@ -50,10 +51,13 @@ async function main(): Promise<void> {
     split: { type: "string" }, language: { type: "string" }, cases: { type: "string" }, out: { type: "string" },
     "max-requests": { type: "string" }, "budget-usd": { type: "string" }, "input-price": { type: "string" }, "output-price": { type: "string" },
     repetitions: { type: "string" }, seed: { type: "string" }, "max-output-tokens": { type: "string" },
-    endpoint: { type: "string" }, model: { type: "string" }
+    endpoint: { type: "string" }, model: { type: "string" }, strict: { type: "boolean" }
   } });
   validateCorpus();
   if ((values.live && values.replay) || (values.execute && !values.live) || (values.syntax && values.live) || (values.functional && (values.live || values.replay))) throw new Error("Incompatible modes.");
+  if (values.strict && (values.live || values.replay || !values.functional || !values.syntax)) {
+    throw new Error("--strict requires offline --functional --syntax checks.");
+  }
   const replayEnvelope: unknown = values.replay ? JSON.parse(readFileSync(values.replay, "utf8")) as unknown : null;
   const replayManifest = values.replay ? readReplayManifest(replayEnvelope) : null;
   const replayCorpusHash = replayManifest?.corpusHash;
@@ -134,12 +138,14 @@ async function main(): Promise<void> {
     const syntax = values.syntax ? report.rows.filter((row) => row.mode !== "abstain").map((row) => ({ caseId: row.caseId, repetition: row.repetition,
       raw: checkSyntax(row.language as Language, row.rawScore.reconstructed), processed: checkSyntax(row.language as Language, row.processedScore.reconstructed) })) : null;
     const previous = values.replay ? null : baseline();
+    const validationFailures = values.strict ? oracleValidationFailures({ references, changedReferences, syntax, regressions }) : [];
     writeReport(path, { ...report, replaySource: values.replay ? resolve(values.replay) : null, replayManifest, references, changedReferences, syntax, regressions, baseline: previous,
+      strict: Boolean(values.strict), validationFailures,
       missingSelectedCases: selected.filter((entry) => !captures.some((capture) => capture.caseId === entry.id)).map((entry) => entry.id) });
     console.log(JSON.stringify({ report: path, summary: report.summary, regressions, referenceFailures: references?.filter((row) => !row.passed) ?? null,
-      changedReferenceFailures: changedReferences?.filter((row) => !row.passed) ?? null }, null, 2));
-    // Oracle cleanup differences are measured findings, not a harness execution failure.
-    if (references?.some((row) => !row.passed)) process.exitCode = 1;
+      changedReferenceFailures: changedReferences?.filter((row) => !row.passed) ?? null, validationFailures }, null, 2));
+    // Experimental reporting remains permissive; CI explicitly requires the strict oracle gate.
+    if (validationFailures.length > 0 || references?.some((row) => !row.passed)) process.exitCode = 1;
     if (previous && ["F2-whitespace-stop", "F3-nested-call", "F3-terminal-space"].some((id) => previous.regressions.find((row) => row.id === id)?.passed !== false)) throw new Error("Baseline did not reproduce F2/F3.");
   }
 }

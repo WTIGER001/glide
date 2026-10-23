@@ -56,6 +56,8 @@ export interface CompletionCoordinatorDependencies {
 export class CompletionCoordinator implements vscode.InlineCompletionItemProvider, vscode.Disposable {
   private generation = 0;
   private active: ActiveOperation | undefined;
+  private requestingOperation: ActiveOperation | undefined;
+  private authenticationBlocked = false;
   private cooldownUntil = 0;
   private transientFailures = 0;
   private suggestionSequence = 0;
@@ -126,6 +128,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     operation.resolveDelay?.(false);
     operation.resolveDelay = undefined;
     operation.requestController?.abort(reason);
+    this.finishRequest(operation);
     this.dependencies.logger.event("completion.cancelled", { reason });
   }
 
@@ -137,6 +140,23 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
   public cancelDocument(uri: vscode.Uri): void {
     if (this.active?.anchor.uri === uri.toString()) {
       this.cancel("document-change");
+    }
+  }
+
+  public resetTransportState(): void {
+    this.authenticationBlocked = false;
+    this.cooldownUntil = 0;
+    this.transientFailures = 0;
+  }
+
+  public pauseForAuthenticationFailure(): void {
+    this.authenticationBlocked = true;
+  }
+
+  private finishRequest(operation: ActiveOperation): void {
+    if (this.requestingOperation === operation) {
+      this.requestingOperation = undefined;
+      this.dependencies.setRequesting(false);
     }
   }
 
@@ -161,6 +181,13 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     position: vscode.Position
   ): Promise<CompletionItems> {
     const initialConfiguration = readConfiguration(document.uri);
+    // Glide's own credential is never source context, including through symlink aliases
+    // or the advanced opt-in for other sensitive files.
+    if (await this.dependencies.secrets.isCredentialFile(document.fileName)) {
+      this.dependencies.logger.event("completion.suppressed", { reason: "protected-file" });
+      return undefined;
+    }
+    if (!this.isCurrent(operation, document)) return undefined;
     const initialReason = this.eligibilityReason(document, position, initialConfiguration, operation.anchor.explicit);
     if (initialReason !== undefined) {
       this.dependencies.logger.event("completion.suppressed", { reason: initialReason });
@@ -175,6 +202,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     if (initialCached !== undefined) {
       return initialCached;
     }
+    if (this.authenticationBlocked && !operation.anchor.explicit) return undefined;
     if (!(await this.delay(operation, operation.anchor.explicit ? 0 : initialConfiguration.debounceMs)) || !this.isCurrent(operation, document)) {
       return undefined;
     }
@@ -201,7 +229,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     if (cached !== undefined) {
       return cached;
     }
-    if (Date.now() < this.cooldownUntil) {
+    if (Date.now() < this.cooldownUntil || (this.authenticationBlocked && !operation.anchor.explicit)) {
       return undefined;
     }
 
@@ -211,6 +239,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     }
     const controller = new AbortController();
     operation.requestController = controller;
+    this.requestingOperation = operation;
     this.dependencies.setRequesting(true);
     this.dependencies.statistics.requestStarted(configuration.model, completionContext.language);
     const startedAt = performance.now();
@@ -239,7 +268,7 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
         this.dependencies.statistics.outputRejected(`response-${result.status}`);
         return undefined;
       }
-      this.transientFailures = 0;
+      this.resetTransportState();
       this.dependencies.onTransportSuccess();
       this.dependencies.statistics.requestCompleted(performance.now() - startedAt, result.timeToFirstTokenMs);
       const processingStartedAt = performance.now();
@@ -277,13 +306,15 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       });
       return this.itemIfCurrent(operation, document, position, completionContext, completion);
     } catch (error) {
+      if (!this.isCurrent(operation, document)) {
+        this.dependencies.statistics.requestCancelled(false, performance.now() - startedAt);
+        return undefined;
+      }
       this.handleError(error, configuration, performance.now() - startedAt);
       return undefined;
     } finally {
       operation.requestController = undefined;
-      if (this.active === operation) {
-        this.dependencies.setRequesting(false);
-      }
+      this.finishRequest(operation);
     }
   }
 
@@ -420,6 +451,8 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       if (error.timedOut) {
         this.dependencies.statistics.requestCancelled(true, elapsedMs);
         this.dependencies.logger.importantError("completion.timeout", requestMetadata);
+        this.backOff();
+        this.dependencies.onTransportError();
         return;
       }
       if (error.message.includes("cancelled")) {
@@ -428,12 +461,14 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       }
       this.dependencies.statistics.requestFailed();
       if (error.statusCode === 401 || error.statusCode === 403) {
+        this.pauseForAuthenticationFailure();
         this.dependencies.logger.importantError("completion.authentication-failed", {
           status: error.statusCode,
           category: "responses-api",
           ...requestMetadata
         });
         this.dependencies.onAuthenticationError();
+        return;
       } else {
         this.dependencies.logger.importantError("completion.failed", {
           status: error.statusCode,
@@ -443,9 +478,8 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
       }
       if (error.statusCode === 429) {
         this.cooldownUntil = Date.now() + 2000;
-      } else if (error.statusCode !== undefined && error.statusCode >= 500) {
-        this.transientFailures += 1;
-        this.cooldownUntil = Date.now() + Math.min(8000, 500 * 2 ** this.transientFailures);
+      } else if (error.statusCode === undefined || error.statusCode >= 500) {
+        this.backOff();
       }
       this.dependencies.onTransportError();
       return;
@@ -453,6 +487,11 @@ export class CompletionCoordinator implements vscode.InlineCompletionItemProvide
     this.dependencies.statistics.requestFailed();
     this.dependencies.logger.importantError("completion.failed", { category: "unexpected", ...requestMetadata });
     this.dependencies.onTransportError();
+  }
+
+  private backOff(): void {
+    this.transientFailures = Math.min(4, this.transientFailures + 1);
+    this.cooldownUntil = Date.now() + 500 * 2 ** this.transientFailures;
   }
 }
 

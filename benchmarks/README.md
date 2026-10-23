@@ -32,6 +32,7 @@ Run from the repository root with dependencies installed. Full checks need Go, P
 ```sh
 npm run benchmark:offline -- --out benchmarks/runs/oracle.json
 npm run benchmark:offline -- --functional --syntax --out benchmarks/runs/checked.json
+npm run benchmark:offline -- --strict --functional --syntax --out benchmarks/runs/release-gate.json
 npm run benchmark:offline -- --language yaml --split development
 npm run benchmark:offline -- --replay benchmarks/runs/live.json --syntax --out benchmarks/runs/replayed.json
 ```
@@ -40,7 +41,9 @@ npm run benchmark:offline -- --replay benchmarks/runs/live.json --syntax --out b
 
 `--syntax` parses raw and processed reconstructions using `gofmt`, Python `ast.parse`, TypeScript syntactic diagnostics, and the data parsers. It does not execute captured output. A missing/timed-out parser is reported as unknown, not a pass. Syntax validity is not type correctness, behavior, or evidence that a suggestion is useful. Incomplete surrounding files may cause valid fragments to fail whole-file parsing. Run syntax checks during offline replay, outside live latency measurements.
 
-The offline runner loads the actual processor from baseline commit `9a31109bac2d20ab110f1f25c6db93f4e72b5392` and requires it to reproduce F2/F3. That git object must exist; fetch the project history if a shallow checkout lacks it. No model is involved. Corpus changes and malformed captures fail validation. Reference compilation/assertion failures fail the command. Measured current-processor mismatches and regression failures are written to the report, so **a zero exit status is not a correctness gate**: inspect `regressions`, `syntax`, and `changedReferences` before advancing GL-07.
+The offline runner loads the actual processor from baseline commit `9a31109bac2d20ab110f1f25c6db93f4e72b5392` and requires it to reproduce F2/F3. That git object must exist; fetch the project history if a shallow checkout lacks it. The CLI regression test also uses this history. No model is involved. Corpus changes and malformed captures fail validation. Reference compilation/assertion failures fail the command.
+
+CI and release validation use **`--strict --functional --syntax`**. This offline-only mode returns a nonzero exit status for failed boundary regressions, original or transformed-reference behavior failures, invalid syntax, missing checks, or unavailable parsers. Equivalent formatting changes remain acceptable when behavior and syntax pass. Experimental runs without `--strict` keep permissive reporting: a zero exit status in that mode is not a correctness gate; inspect `regressions`, `syntax`, and `changedReferences`. Live/replay runs cannot use the oracle-only strict mode.
 
 Replay checks corpus identity, sample shape, IDs, duplicates, and nonnegative metrics. It retains the original manifest and uses its output limit unless explicitly overridden for a processor experiment. Replay evaluates the current processor; an override changes the evaluation policy, not the original captured request. Original live order/settings remain in the source artifact. Missing selected cases are listed. Do not compare partial runs as if they had full coverage.
 

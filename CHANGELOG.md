@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.1.4 - 2026-10-23
+
+- Protect common SSH/package-manager credential files and directories, plus Glide's configured API-key file, resolved target, and aliases even under sensitive-file opt-in.
+- Add the private user-level API-key file fallback, preserving SecretStorage priority and rejecting relative XDG configuration paths.
+- Clear request activity immediately on cancellation and prevent old requests from changing newer request status; preserve activity during overlapping connection tests.
+- Pause automatic requests after authentication failures; support recovery through configuration/credential changes, connection testing, or explicit completion retry. Back off after network failures and timeouts.
+- Fetch benchmark history in CI and enforce strict boundary, transformed-reference, and syntax validation, including unavailable parsers.
+- Isolate editor integration credentials and profiles.
+- Preserve the existing `wtiger001.glide-code-completion` Marketplace identity for in-place upgrades; correct the mismatched `glide` name in the initial 0.1.4 test package.
 
 - Add UTF-16/CRLF cursor validation and a versioned 186-case corpus while preserving historical V1 replay.
 - Evaluate exact full-fragment derivation and retain the production insertion-only protocol after lower recognized quality.
@@ -17,7 +25,7 @@
 - Add real editor acceptance and request-lifecycle regression coverage.
 - Make source-free local measurements accurately distinguish returned and accepted suggestions.
 - Serve cache hits before debounce and preserve continuation reuse across sliding context windows.
-- Align the Marketplace identity with `wtiger001.glide` and the V1 OpenAI Responses-only scope.
+- Align the extension with the V1 OpenAI Responses-only scope.
 
 ## 0.1.3 - 2026-09-07
 

@@ -6,7 +6,7 @@ import { readConfiguration } from "./configuration";
 export class GlideStatusBar implements vscode.Disposable {
   private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   private requesting = false;
-  private error = false;
+  private error: false | "transport" | "authentication" = false;
 
   public constructor(private readonly secrets: SecretStore) {
     this.item.name = "Glide inline completion";
@@ -19,8 +19,8 @@ export class GlideStatusBar implements vscode.Disposable {
     this.refresh();
   }
 
-  public setError(error: boolean): void {
-    this.error = error;
+  public setError(error: boolean | "authentication"): void {
+    this.error = error === true ? "transport" : error;
     this.refresh();
   }
 
@@ -32,21 +32,23 @@ export class GlideStatusBar implements vscode.Disposable {
       this.item.command = "glide.enable";
       return;
     }
-    if (!this.secrets.hasApiKey() || configuration.endpoint === undefined || this.error) {
+    if (!this.secrets.hasApiKey() || configuration.endpoint === undefined || (this.error && !this.requesting)) {
       this.item.text = "$(warning) Glide: !";
       this.item.tooltip =
         configuration.endpoint === undefined
           ? "Glide's endpoint is invalid. HTTPS is required except for localhost."
-          : this.secrets.hasApiKey()
-            ? "Glide could not reach the configured Responses endpoint. Click to open diagnostics."
-            : "Glide needs an API key or access token. Click to set one.";
-      this.item.command = !this.secrets.hasApiKey() ? "glide.setApiKey" : "glide.openDiagnosticLog";
+          : this.error === "authentication"
+            ? "Glide authentication failed. Automatic requests are paused. Click to set the API key, or run Glide: Test Connection to retry."
+            : this.secrets.hasApiKey()
+              ? "Glide could not reach the configured Responses endpoint. Click to open diagnostics."
+              : "Glide needs an API key or access token. Click to set one.";
+      this.item.command = !this.secrets.hasApiKey() || this.error === "authentication" ? "glide.setApiKey" : "glide.openDiagnosticLog";
       return;
     }
     const label = modelLabel(configuration.model);
     this.item.text = this.requesting ? `$(loading~spin) Glide: ${label}` : `$(sparkle) Glide: ${label}`;
     this.item.tooltip = this.requesting
-      ? `Glide is requesting a ${label} completion. Click to disable.`
+      ? `Requesting completion from ${label}… Click to disable.`
       : `Glide is ready with ${label}. Click to disable.`;
     this.item.command = "glide.disable";
   }
