@@ -3,7 +3,7 @@
   "displayName": "Glide for OpenAI Code Completion",
   "description": "Low-latency AI tab completion for VS Code using OpenAI GPT-5.6 Luna.",
   "icon": "media/glide-icon.png",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "wtiger001",
   "license": "MIT",
   "repository": {
@@ -74,6 +74,16 @@
       {
         "command": "glide.setApiKey",
         "title": "Set API Key",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.selectApiKeyFile",
+        "title": "Select API Key File",
+        "category": "Glide"
+      },
+      {
+        "command": "glide.clearApiKeyFile",
+        "title": "Clear API Key File",
         "category": "Glide"
       },
       {

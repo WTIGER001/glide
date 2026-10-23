@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 - 2026-10-23
+
+- Add **Glide: Select API Key File** with a file picker, immediate loading, and a locally remembered path; preserve SecretStorage priority and offer removal of an overriding saved key.
+- Add **Glide: Clear API Key File** to restore the default path without deleting credentials.
+- Validate key-file permissions and contents before changing the active selection, and protect selected/default paths and symlink targets from completion requests.
+
 ## 0.1.4 - 2026-10-23
 
 - Protect common SSH/package-manager credential files and directories, plus Glide's configured API-key file, resolved target, and aliases even under sensitive-file opt-in.

@@ -1,6 +1,7 @@
 export const EXTENSION_NAME = "Glide";
 export const CONFIG_SECTION = "glide";
 export const API_KEY_SECRET = "glide.openaiApiKey";
+export const API_KEY_FILE_STATE = "glide.apiKeyFilePath";
 export const PROMPT_VERSION = "completion-v1";
 export const ACCEPTANCE_COMMAND = "glide.internal.recordAcceptance";
 

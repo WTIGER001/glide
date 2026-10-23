@@ -1181,3 +1181,21 @@ Use package name `glide-code-completion` and publisher `wtiger001`, preserving t
 ## Rationale
 
 The user's Marketplace upload failed because the listing path expects `glide-code-completion` while the initial test VSIX declared `glide`. The established listing is direct evidence that the earlier identity change prevents normal release updates. Restoring its immutable package identity avoids a separate listing and preserves the original extension's stored credentials. Validate both VSIX manifests and run native-editor integration against the corrected packaged extension before delivery.
+
+---
+
+# ADR-048: Select a Credential File from the Command Palette
+
+## Status
+
+Accepted for 0.1.5, 2026-10-23.
+
+## Decision
+
+Provide **Glide: Select API Key File** and **Glide: Clear API Key File**. Store only an explicitly selected absolute path in extension global state without opting it into Settings Sync. Do not accept a workspace configuration override. Validate the file before saving the selection, load it immediately, and re-read it at activation. Clearing restores the conventional XDG/home path without deleting the file or saved key. Preserve SecretStorage → selected/default file → environment priority; offer removal of an overriding saved key in the selection confirmation.
+
+Retain private Unix target permissions, support symlinks, and reject missing, unreadable, non-file, empty, NUL-containing, or over-64-KiB credential files with fixed error messages that do not expose paths or contents. Failed selection leaves the active credential and remembered path unchanged. Serialize file changes, withhold credentials during those changes, invalidate completion requests/cache around them, and reset authentication state after success. Always protect the selected and conventional paths and resolved targets; retain previously selected/rejected paths in the session's protection set.
+
+## Rationale
+
+The user requested a discoverable way to choose a managed key file without creating a symlink or configuring the environment. A local remembered path supports this workflow while preventing repositories from redirecting credential reads through workspace settings. Keeping the established priority avoids silently deleting or overriding a saved credential. This extends ADR-030A and ADR-043; it does not add a source index, telemetry, provider, or service.

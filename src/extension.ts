@@ -10,11 +10,12 @@ import { SecretStore } from "./secretStore";
 import { LocalStatistics } from "./statistics";
 import { GlideStatusBar } from "./statusBar";
 import { BoundedSameFileContextProvider } from "./sameFileContext";
+import { registerApiKeyFileCommands } from "./apiKeyFileCommands";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const output = vscode.window.createOutputChannel("Glide");
   const statisticsOutput = vscode.window.createOutputChannel("Glide Statistics");
-  const secrets = new SecretStore(context.secrets);
+  const secrets = new SecretStore(context.secrets, context.globalState);
   await secrets.initialize();
   const logger = new DiagnosticLogger(output, () => readConfiguration().diagnosticLogging);
   const statistics = new LocalStatistics(context.globalState);
@@ -72,6 +73,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     statistics,
     status,
     coordinator,
+    ...registerApiKeyFileCommands(secrets, () => {
+      coordinator.cancel("key-file-changing");
+      cache.clear();
+    }, (changed) => {
+      coordinator.cancel("key-file-changed");
+      if (!changed) return;
+      coordinator.resetTransportState();
+      authenticationNoticeShown = false;
+      transportError = false;
+      status.setError(false);
+      cache.clear();
+      status.refresh();
+    }),
     vscode.languages.registerInlineCompletionItemProvider({ scheme: "file" }, coordinator),
     vscode.workspace.onDidChangeTextDocument((event) => coordinator.cancelDocument(event.document.uri)),
     vscode.window.onDidChangeTextEditorSelection(() => coordinator.cancel("selection-change")),

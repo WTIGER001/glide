@@ -19,6 +19,8 @@ export async function testActivationAndCommands(): Promise<void> {
     "glide.toggle",
     "glide.setBaseUrl",
     "glide.setApiKey",
+    "glide.selectApiKeyFile",
+    "glide.clearApiKeyFile",
     "glide.testConnection",
     "glide.showStats",
     "glide.clearCache"
@@ -74,6 +76,7 @@ export async function testNativeInlineCompletionAndAcceptance(): Promise<void> {
   try {
     // The test host must never prefer a credential retained by an earlier run.
     await vscode.commands.executeCommand("glide.removeApiKey");
+    await vscode.commands.executeCommand("glide.clearApiKeyFile");
     process.env.OPENAI_API_KEY = "synthetic-integration-key";
     await configuration.update("baseUrl", `http://127.0.0.1:${address.port}`, vscode.ConfigurationTarget.Global);
     await configuration.update("debounceMs", 75, vscode.ConfigurationTarget.Global);

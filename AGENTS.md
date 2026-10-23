@@ -35,6 +35,15 @@ Glide is a lightweight VS Code extension for predictive inline code completion.
 - Preserve the existing VS Code Marketplace identity `wtiger001.glide-code-completion` (`package.json` name `glide-code-completion`), with repository URL `https://github.com/wtiger001/glide`. Display branding may change without changing this identity. Use publishable metadata, clear documentation, the MIT license with `John Bauer` as copyright holder, and no hard-coded credentials or private infrastructure assumptions.
 - Prioritize Go quality first, while keeping the core language-independent and testing TypeScript and Python as well.
 
+## Marketplace release checks
+
+- The existing listing is **`wtiger001.glide-code-completion`**: publisher **`wtiger001`**, package name **`glide-code-completion`**. Keep these values unchanged for updates. The product/repository name `Glide`/`glide` and `displayName` do not determine the Marketplace identity. The earlier `wtiger001.glide` package caused an upload rejection; ADR-047 supersedes the conflicting ADR-046 guidance.
+- Before packaging, check that `package.json` and the root package entries in `package-lock.json` agree on name and version. Use a new version for an update to an already published release; do not reuse a published version.
+- After the final build, inspect the **actual VSIX archive**, not just the source manifest or filename. Its embedded `extension/package.json` must declare `publisher: wtiger001`, `name: glide-code-completion`, and the intended version. The XML `Identity` in `extension.vsixmanifest` must declare matching `Publisher`, `Id`, and `Version`. A mismatch blocks delivery until corrected and rebuilt; renaming the VSIX file alone does not fix it.
+- Deliver `glide-code-completion-<version>.vsix`. Check archive integrity, packaged command contributions, agreement with the final built runtime, and the package file allowlist. Exclude credentials, source/tests, development tooling, and benchmark captures. Rebuild and recheck if any packaged content changes after validation.
+- Complete the relevant automated checks and validate the packaged extension in the supported editor versions. Record the exact artifact filename, version, SHA-256, checks performed, and any remaining manual smoke tests in the release validation notes. Do not describe a mocked UI test as a completed manual editor test.
+- When reporting upload readiness, identify the exact verified VSIX and the existing listing it updates. Distinguish local package validation from Marketplace acceptance, and state whether the release source has been committed/pushed. Never claim an upload or publication succeeded without a confirming result.
+
 ## Quality and change discipline
 
 - Build local measurements into the product: latency, cancellation, cache-hit, suggestion/display/acceptance counts, accepted characters, completion length, and language are appropriate examples.
